@@ -27,7 +27,9 @@ class CSimpleReelmap : public CWnd
 	int m_nMaxRow, m_nMaxCol, m_nActionCode;
 
 	BOOL IsShare(int &nSerial);
+	BOOL Add(int nSerial);
 	BOOL ShiftToBuffer(int nSerial);
+
 	BOOL CopyPcr(CString sSrc, CString sDest);
 	CString ParseFolderName(CString sPathName, CString &sRemainPathName);
 	BOOL Copy(CString sSource, CString sDest);

@@ -102,9 +102,10 @@ BOOL CSimpleReelmap::ProcReelmap()
 	if (IsShare(nSerial) && !m_bLock)
 	{
 		m_bLock = TRUE;
-		CPcr Pcr;
-		Pcr.Init(nSerial);
-		m_arPcr[0].Add(Pcr);
+		Add(nSerial);
+		//CPcr Pcr;
+		//Pcr.Init(nSerial);
+		//m_arPcr[0].Add(Pcr);
 		ShiftToBuffer(nSerial);
 		m_bLock = FALSE;
 	}
@@ -355,11 +356,32 @@ CString CSimpleReelmap::GetTextArPcr(int nIdx)
 	return sData;
 }
 
+BOOL CSimpleReelmap::Add(int nSerial)
+{
+	int i;
+	BOOL bAdd = FALSE;
+	CPcr Pcr[2];
+	Pcr[0].Init(nSerial);
+	int nCount = m_arPcr[0].GetSize();
+	for (i = 0; i < nCount; i++)
+	{
+		Pcr[1] = m_arPcr[0].GetAt(i);
+		if (Pcr[1].GetSerial() == nSerial)
+		{
+			Pcr[1].Free();
+			m_arPcr[0].SetAt(i, Pcr[0]); // 인덱스(i)에 값 Pcr[0] 입력
+			bAdd = TRUE;
+			break;
+		}
+	}
+	if(!bAdd)
+		m_arPcr[0].Add(Pcr[0]);
+
+	return TRUE;
+}
+
 BOOL CSimpleReelmap::Save()
 {
-	//char FileD[MAX_PATH];
-	//StringToChar(m_sPath, FileD);
-
 	CFile cfile;
 	if (!cfile.Open(m_sPath, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary | CFile::shareDenyNone, NULL))
 	{
@@ -370,7 +392,7 @@ BOOL CSimpleReelmap::Save()
 	int nActionCode = m_nActionCode;
 	int nNodeX = m_nMaxCol;
 	int nNodeY = m_nMaxRow;
-	int i, j, k;
+	int i, k;
 	cfile.Write(&nActionCode, sizeof(int));
 	cfile.Write(&nNodeY, sizeof(int));
 	cfile.Write(&nNodeX, sizeof(int));
@@ -416,10 +438,7 @@ BOOL CSimpleReelmap::Save()
 
 BOOL CSimpleReelmap::Load()
 {
-	char FileD[MAX_PATH];
-	StringToChar(m_sPath, FileD);
-
-	int i, j, k;
+	int i, k;
 	int nCount = m_arPcr[1].GetSize();
 	if (nCount > 0)
 	{
