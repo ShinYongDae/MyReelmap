@@ -115,6 +115,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <StackReserveSize>104857600</StackReserveSize>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -185,6 +186,8 @@
     <ClInclude Include="MyReelmapDlg.h" />
     <ClInclude Include="Pcr.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SimpleCamMaster.h" />
+    <ClInclude Include="SimpleOpengl.h" />
     <ClInclude Include="SimpleReelmap.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -193,6 +196,8 @@
     <ClCompile Include="MyReelmap.cpp" />
     <ClCompile Include="MyReelmapDlg.cpp" />
     <ClCompile Include="Pcr.cpp" />
+    <ClCompile Include="SimpleCamMaster.cpp" />
+    <ClCompile Include="SimpleOpengl.cpp" />
     <ClCompile Include="SimpleReelmap.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

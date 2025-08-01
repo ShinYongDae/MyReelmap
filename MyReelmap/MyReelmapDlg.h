@@ -3,16 +3,25 @@
 //
 
 #pragma once
+#include "SimpleCamMaster.h"
+#include "SimpleOpengl.h"
 #include "SimpleReelmap.h"
-
 
 // CMyReelmapDlg 대화 상자
 class CMyReelmapDlg : public CDialog
 {
 	CSimpleReelmap* m_pReelmap[4];
+	CSimpleOpengl* m_pOpengl;
+	CSimpleCamMaster m_CamMaster;
 
 	BOOL m_bTimer;
+
+	void InitReelmap();
+	void InitOpengl();
+	void InitCamMaster();
+
 	void Disp();
+	void DrawStrPcs();
 
 // 생성입니다.
 public:
@@ -24,7 +33,11 @@ public:
 	enum { IDD = IDD_MYREELMAP_DIALOG };
 #endif
 
-	protected:
+public:
+	tagStrPcs& GetAddrStrPcs();
+	BOOL GetMatrix(int nPcsId, int &nR, int &nC);
+
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 
 
@@ -41,4 +54,5 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnBnClickedButton2();
+	afx_msg void OnBnClickedButton3();
 };

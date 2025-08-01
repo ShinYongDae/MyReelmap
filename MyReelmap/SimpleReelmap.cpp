@@ -5,6 +5,7 @@
 #include "MyReelmap.h"
 #include "SimpleReelmap.h"
 
+#include "MyReelmapDlg.h"
 
 // CSimpleReelmap
 
@@ -21,6 +22,11 @@ CSimpleReelmap::CSimpleReelmap(CString sPath, CWnd* pParent/*=NULL*/)
 	m_nMaxRow = 0;
 	m_nMaxCol = 0;
 	m_nActionCode = 0;
+
+	//m_nCMstActionCode = 0;
+	//m_nCMstMaxRow = 0;
+	//m_nCMstMaxCol = 0;
+	//m_nCMstTotPcs = 0;
 
 	Free();
 	
@@ -679,3 +685,4 @@ CString CSimpleReelmap::CharToString(const char *szStr)
 	}
 	return strRet;
 }
+

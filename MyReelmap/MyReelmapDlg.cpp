@@ -24,6 +24,7 @@ CMyReelmapDlg::CMyReelmapDlg(CWnd* pParent /*=NULL*/)
 	m_pReelmap[1] = NULL;
 	m_pReelmap[2] = NULL;
 	m_pReelmap[3] = NULL;
+	m_pOpengl = NULL;
 }
 
 CMyReelmapDlg::~CMyReelmapDlg()
@@ -50,6 +51,11 @@ CMyReelmapDlg::~CMyReelmapDlg()
 		delete m_pReelmap[3];
 		m_pReelmap[3] = NULL;
 	}
+	if (m_pOpengl)
+	{
+		delete m_pOpengl;
+		m_pOpengl = NULL;
+	}
 }
 
 void CMyReelmapDlg::DoDataExchange(CDataExchange* pDX)
@@ -63,6 +69,7 @@ BEGIN_MESSAGE_MAP(CMyReelmapDlg, CDialog)
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDC_BUTTON1, &CMyReelmapDlg::OnBnClickedButton1)
 	ON_BN_CLICKED(IDC_BUTTON2, &CMyReelmapDlg::OnBnClickedButton2)
+	ON_BN_CLICKED(IDC_BUTTON3, &CMyReelmapDlg::OnBnClickedButton3)
 END_MESSAGE_MAP()
 
 
@@ -78,18 +85,11 @@ BOOL CMyReelmapDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	CString sPath0 = _T("C:\\R2RSet\\Reelmap0.bin");
-	//CString sPath1 = _T("C:\\R2RSet\\Reelmap1.bin");
-	//CString sPath2 = _T("C:\\R2RSet\\Reelmap2.bin");
-	//CString sPath3 = _T("C:\\R2RSet\\Reelmap3.bin");
-	m_pReelmap[0] = new CSimpleReelmap(sPath0, this);
-	//m_pReelmap[1] = new CSimpleReelmap(sPath1, this);
-	//m_pReelmap[2] = new CSimpleReelmap(sPath2, this);
-	//m_pReelmap[3] = new CSimpleReelmap(sPath3, this);
-	m_pReelmap[0]->Init(20, 30, 3);
-	//m_pReelmap[1]->Init(20, 30, 3);
-	//m_pReelmap[2]->Init(20, 30);
-	//m_pReelmap[3]->Init(20, 30);
+	InitReelmap();
+	InitOpengl();
+	InitCamMaster();
+	DrawStrPcs();
+
 	m_bTimer = TRUE;
 	SetTimer(0, 100, NULL);
 
@@ -146,6 +146,41 @@ void CMyReelmapDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialog::OnTimer(nIDEvent);
 }
 
+void CMyReelmapDlg::InitReelmap()
+{
+	CString sPath0 = _T("C:\\R2RSet\\Reelmap0.bin");
+	//CString sPath1 = _T("C:\\R2RSet\\Reelmap1.bin");
+	//CString sPath2 = _T("C:\\R2RSet\\Reelmap2.bin");
+	//CString sPath3 = _T("C:\\R2RSet\\Reelmap3.bin");
+	m_pReelmap[0] = new CSimpleReelmap(sPath0, this);
+	//m_pReelmap[1] = new CSimpleReelmap(sPath1, this);
+	//m_pReelmap[2] = new CSimpleReelmap(sPath2, this);
+	//m_pReelmap[3] = new CSimpleReelmap(sPath3, this);
+	m_pReelmap[0]->Init(20, 30, 3);
+	//m_pReelmap[1]->Init(20, 30, 3);
+	//m_pReelmap[2]->Init(20, 30);
+	//m_pReelmap[3]->Init(20, 30);
+}
+
+void CMyReelmapDlg::InitOpengl()
+{
+	m_pOpengl = new CSimpleOpengl(this);
+	HWND hWnd = GetDlgItem(IDC_STC_REELMAP_IMG)->GetSafeHwnd();
+	m_pOpengl->SubclassDlgItem(IDC_STC_REELMAP_IMG, this);
+	m_pOpengl->SetHwnd(hWnd, this);
+	m_pOpengl->SetFont(_T("굴림체"), 12, TRUE);
+
+	//stVertex v1, v2;
+	//v1.x = 10; v1.y = 10; v1.z = 0.0;
+	//v2.x = 500; v2.y = 500; v2.z = 0.0;
+	//m_Opengl.AddLine(v1, v2);
+}
+
+void CMyReelmapDlg::InitCamMaster()
+{
+	m_CamMaster.LoadStrpcs(_T("C:\\R2RSet\\Temp\\strpcs.bin"));
+}
+
 void CMyReelmapDlg::Disp()
 {
 	CString sCurr = _T("");
@@ -171,4 +206,99 @@ void CMyReelmapDlg::OnBnClickedButton2()
 	GetDlgItem(IDC_EDIT2)->GetWindowText(sCurr);
 	if (sCurr != sDisp)
 		GetDlgItem(IDC_EDIT2)->SetWindowText(sDisp);
+}
+
+
+void CMyReelmapDlg::OnBnClickedButton3()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+tagStrPcs& CMyReelmapDlg::GetAddrStrPcs()
+{
+	return m_CamMaster.GetAddrStrPcs();
+}
+
+BOOL CMyReelmapDlg::GetMatrix(int nPcsId, int &nR, int &nC)
+{
+	return m_pReelmap[0]->GetMatrix(nPcsId, nR, nC);
+}
+void CMyReelmapDlg::DrawStrPcs()
+{
+	//m_pReelmap[0]->DrawStrPcs();
+	m_pOpengl->DrawStrPcs(GetAddrStrPcs());
+
+	//stVertex v1, v2;
+	//v1.x = 500; v1.y = 500; v1.z = 0.0;
+	//v2.x = 1100; v2.y = 500; v2.z = 0.0;
+	//m_Opengl.AddLine(v1, v2);
+	//m_Opengl.Refresh();
+/*
+	int k, nTotPnl = 6, nSelMarkingPnl = 2;
+
+	for (k = nTotPnl - 1; k >= 0; k--)
+	{
+		if (k == nSelMarkingPnl)
+		{
+			; // Panel edge is Red Line 
+		}
+		else if (k == nSelMarkingPnl + 1)
+		{
+			; // Panel edge is Red Line 
+		}
+		else
+		{
+			; // Panel edge is White Line 
+		}
+
+		//int nIdx = pDoc->GetPcrIdx1(m_pPnlNum[k]);
+		if (m_pReelmap[0]->Get == -1 || pDoc->m_pPcr[nTestMode][nIdx]->m_nErrPnl == -2)
+		{
+			// Draw Cross....
+			GVertex vtPnt[4];
+			vtPnt[0] = m_pFrmRgn[k][0];
+
+			vtPnt[1].x = m_pFrmRgn[k][0].x;
+			vtPnt[1].y = m_pFrmRgn[k][1].y;
+			vtPnt[1].z = m_pFrmRgn[k][1].z;
+
+			vtPnt[2] = m_pFrmRgn[k][1];
+
+			vtPnt[3].x = m_pFrmRgn[k][1].x;
+			vtPnt[3].y = m_pFrmRgn[k][0].y;
+			vtPnt[3].z = m_pFrmRgn[k][0].z;
+
+			GVGLDrawInit(GV_LINE, 3, m_rgbRed);
+			GVGLDrawVertex(vtPnt[0]);
+			GVGLDrawVertex(vtPnt[2]);
+			GVGLDrawShow();
+
+			GVGLDrawInit(GV_LINE, 3, m_rgbRed);
+			GVGLDrawVertex(vtPnt[1]);
+			GVGLDrawVertex(vtPnt[3]);
+			GVGLDrawShow();
+		}
+
+		for (i = 0; i < m_nTotPcs; i++)
+		{
+			if (m_pReelMap)//pDoc->
+			{
+				if (m_pPnlNum[k] <= 0)
+				{
+					GVGLDrawInit(GV_RECTF, 3, m_rgbWhite);
+				}
+				else
+				{
+					nDef = m_pReelMap->pPcsDef[k][i];
+					if (nDef)
+						int iii = i;
+
+					GVGLDrawInit(GV_RECTF, 3, m_rgbDef[nDef]);
+				}
+			}
+			GVGLDrawRectF(m_pPcsPnt[k][i][0], m_pPcsPnt[k][i][1]); // CamMaster의 PCS 인덱스와 그 인덱스의 영역 정보
+			GVGLDrawShow();
+		}
+	}
+	*/
 }

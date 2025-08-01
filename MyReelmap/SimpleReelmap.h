@@ -41,10 +41,11 @@ class CSimpleReelmap : public CWnd
 	CString CharToString(const char *szStr);
 	void Free();
 
+	int m_nCMstTotPcs;
+
 public:
 	CSimpleReelmap(CString sPath, CWnd* pParent = NULL);
 	virtual ~CSimpleReelmap();
-
 	static void ProcThrd(const LPVOID lpContext);
 
 	void Init(int nMaxRow, int nMaxCol, int nActionCode = 0);
@@ -52,6 +53,9 @@ public:
 	BOOL GetMatrix(int nPcsId, int &nR, int &nC);
 	BOOL Save();
 	BOOL Load();
+
+	//void DrawStrPcs();
+	//void DrawStrPcs(stStrPcs* pStrPcs);
 
 protected:
 	void ThreadEnd();

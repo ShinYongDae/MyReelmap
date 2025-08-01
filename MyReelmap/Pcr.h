@@ -34,6 +34,9 @@ typedef struct tagDefPcs
 	}
 }stDefPcs;
 
+
+// CPcr
+
 class CPcr
 {
 	CString m_sPathFolder;
