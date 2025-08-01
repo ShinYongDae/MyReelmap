@@ -93,6 +93,13 @@ typedef CArray<stVertex, stVertex> CArVertex;
 struct stLine
 {
 	stVertex v1, v2;
+	COLORREF color;
+	stLine()
+	{
+		v1.x = 0; v1.y = 0; v1.z = 0;
+		v2.x = 0; v2.y = 0; v2.z = 0;
+		color = RGB(255, 255, 255);
+	}
 };
 typedef CArray<stLine, stLine> CArLine;
 
@@ -156,13 +163,13 @@ class CSimpleOpengl : public CStatic //public CWnd
 
 	void PopupMenu(UINT nFlags, CPoint point);
 
-	void DrawBegin(int mode, int size, stColor color);
+	void DrawBegin(int mode, int size, COLORREF color);
 	void DrawEnd();
 	void DrawRect(stVertex V1, stVertex V2);
 	void DrawLine(stVertex V1, stVertex V2);
 	void Draw();
 	void DrawClear();
-	void DrawClearColor(stColor color);
+	void DrawClearColor(COLORREF color);
 	void DrawText();
 
 public:
@@ -188,8 +195,8 @@ public:
 	BOOL IsDraw();
 
 public:
-	void AddLine(stVertex v1, stVertex v2);
-	void AddText(CString str, CPoint pos = {0,0}, COLORREF color = 0x00FFFFFF); // DWORD COLORREF 0x00bbggrr
+	void AddLine(stVertex v1, stVertex v2, COLORREF color = RGB(255, 255, 255));
+	void AddText(CString str, CPoint pos = {0,0}, COLORREF color = RGB(255, 255, 255)); // DWORD COLORREF 0x00bbggrr
 
 	void DrawStrPcs(tagStrPcs& StrPcs);
 

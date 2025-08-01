@@ -351,7 +351,7 @@ BOOL CSimpleOpengl::ProcOpengl()
 	else if (m_bDrawClearColor)
 	{
 		m_bDrawClearColor = FALSE;
-		stColor color = { 0.0, 0.0, 1.0, 1.0 }; // BLUE
+		COLORREF color = RGB(0, 0, 0);
 		DrawClearColor(color);
 	}
 	return TRUE;
@@ -425,13 +425,14 @@ void CSimpleOpengl::SetupResize(int width, int height)
 	gluPerspective(0.0, 1.0, 1.0, 1.0);							// 원근 투영을 사용하는 경우: fovy: 수직 방향의 보이는 각도 (y축 방향) , aspect: 종횡비 (앞쪽의 클리핑 평면의 폭(w)을 높이(h)로 나눈 값), zNear, zFar
 }
 
-void CSimpleOpengl::DrawBegin(int nMode, int nSize, stColor Color)
+void CSimpleOpengl::DrawBegin(int nMode, int nSize, COLORREF color)
 {
 	if (nMode < Opengl::modPoint || nMode > Opengl::modCircleF)
 		return;
 
-	glPushMatrix();										// Martrix상태를 스택에 넣는다.
-	glColor4f(Color.R, Color.G, Color.B, Color.A);		// drawing color를 설정한다.
+	glPushMatrix();																// Martrix상태를 스택에 넣는다.		
+
+	glColor4f(GetRValue(color), GetGValue(color), GetBValue(color), 0.0);		// drawing color를 설정한다.
 
 	/* glBegin ~ glEnd 블록 사이에 위치만을 가지는 정점만을 정의함
 	모드				설명
@@ -567,11 +568,12 @@ void CSimpleOpengl::StringToChar(CString str, char* szStr)  // char* returned mu
 	szStr[nLen] = _T('\0');
 }
 
-void CSimpleOpengl::AddLine(stVertex v1, stVertex v2)
+void CSimpleOpengl::AddLine(stVertex v1, stVertex v2, COLORREF color)
 {
 	stLine _line;
 	_line.v1 = v1;
 	_line.v2 = v2;
+	_line.color = color;
 	m_arLine.Add(_line);
 }
 
@@ -594,16 +596,15 @@ void CSimpleOpengl::Draw()
 
 	if (nTotal <= 0)	return;
 
-	color.R = 1.0; color.G = 1.0; color.B = 1.0; color.A = 0.0;
-	DrawBegin(Opengl::modLine, 1, color);
 
 	for (i = 0; i < nTotal; i++)
 	{
 		_line = m_arLine.GetAt(i);
+		DrawBegin(Opengl::modLine, 1, _line.color);
 		DrawLine(_line.v1, _line.v2);
+		DrawEnd();
 	}
 
-	DrawEnd();
 	glFlush();											// 그림이 다 그렸졌다는 걸 알려줌. 모든 명령어를 실행되게 함.
 	SwapBuffers(m_hDc);									// OpenGL이 완료한 그림을 새롭게 화면에 그린다 - 현재 buffer에 그려진 것과 Frame에 그려진 것을 swap(Double buffer), 그리기 함수에서 glFlush 대신 사용
 
@@ -621,14 +622,14 @@ void CSimpleOpengl::DrawClear()
 	SwapBuffers(m_hDc);									// OpenGL이 완료한 그림을 새롭게 화면에 그린다 - 현재 buffer에 그려진 것과 Frame에 그려진 것을 swap(Double buffer), 그리기 함수에서 glFlush 대신 사용
 }
 
-void CSimpleOpengl::DrawClearColor(stColor color)
+void CSimpleOpengl::DrawClearColor(COLORREF color)
 {
-	glClearColor(color.R, color.G, color.B, 1.0);	// 바탕색을 지정, alpha 값 (1.0값으로 고정)
+	glClearColor(GetRValue(color), GetGValue(color), GetBValue(color), 1.0);	// 바탕색을 지정, alpha 값 (1.0값으로 고정)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glFlush();											// 그림이 다 그렸졌다는 걸 알려줌.
 	SwapBuffers(m_hDc);									// OpenGL이 완료한 그림을 새롭게 화면에 그린다 - 현재 buffer에 그려진 것과 Frame에 그려진 것을 swap(Double buffer), 그리기 함수에서 glFlush 대신 사용
 	
-	glClearColor(color.R, color.G, color.B, 1.0);	// 바탕색을 지정, alpha 값 (1.0값으로 고정)
+	glClearColor(GetRValue(color), GetGValue(color), GetBValue(color), 1.0);	// 바탕색을 지정, alpha 값 (1.0값으로 고정)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glFlush();											// 그림이 다 그렸졌다는 걸 알려줌.
 	SwapBuffers(m_hDc);									// OpenGL이 완료한 그림을 새롭게 화면에 그린다 - 현재 buffer에 그려진 것과 Frame에 그려진 것을 swap(Double buffer), 그리기 함수에서 glFlush 대신 사용
@@ -787,6 +788,7 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 {
 	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
 
+	COLORREF color = RGB(255, 255, 255);
 	int nWorldMargin = 6;	// [mm] = [dot]
 	int nWorldStX = 3;		// [mm] = [dot]
 
@@ -811,6 +813,7 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
 	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmSpace = 2.0;
 	double dDrawStPosX = 0.0;
 	
 	for (k = 0; k < nTotPnl; k++) // Draw Panel from Left to Right. 
@@ -839,12 +842,14 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 			fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
 
 			fData1 += (double)nWorldStX;
+			fData1 += dFrmSpace * k;
 
 			if (!i)
 			{
-				if ((nWorldW - fWidth*nTotPnl) < 0.0)
+				int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);
+				if ((nWorldW - nRealW) < 0.0)
 				{
-					int nNeedX = fWidth*nTotPnl - nWorldW;
+					int nNeedX = nRealW - nWorldW;
 					dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
 					dFrmOffset[0] = 0.0;
 				}
@@ -871,21 +876,26 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 			fData2 -= dFrmMargin[1];									// top
 			fData4 += dFrmMargin[3];									// bottom
 
+			if (k == nSelMarkingPnl || k == nSelMarkingPnl+1)
+				color = RGB(255, 0, 0);
+			else
+				color = RGB(255, 255, 255);
+
 			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
 			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2);
+			AddLine(v1, v2, color);
 
 			v1.x = fData1; v1.y = fData4; v1.z = 0.0;
 			v2.x = fData3; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2);
+			AddLine(v1, v2, color);
 
 			v1.x = fData3; v1.y = fData4; v1.z = 0.0;
 			v2.x = fData3; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2);
+			AddLine(v1, v2, color);
 
 			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
 			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2);
+			AddLine(v1, v2, color);
 		}
 
 		for (i = 0; i < nTotPcs; i++)
@@ -901,6 +911,7 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 			fNeed = (fData3 - fData1) - fWidth;
 
 			fData1 += (double)nWorldStX;
+			fData1 += dFrmSpace * k;
 			fData1 += dFrmOffset[0];									// left
 			fData2 += dFrmOffset[1];									// top
 
