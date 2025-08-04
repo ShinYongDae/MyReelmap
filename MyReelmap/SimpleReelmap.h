@@ -54,8 +54,7 @@ public:
 	BOOL Save();
 	BOOL Load();
 
-	//void DrawStrPcs();
-	//void DrawStrPcs(stStrPcs* pStrPcs);
+	CArPcr& GetAddrArPcr();
 
 protected:
 	void ThreadEnd();

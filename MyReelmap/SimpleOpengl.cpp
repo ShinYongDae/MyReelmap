@@ -341,7 +341,7 @@ BOOL CSimpleOpengl::ProcOpengl()
 	else if (m_bDrawText)
 	{
 		m_bDrawText = FALSE;
-		DrawText();
+		DrawTestText();
 	}
 	else if (m_bDrawClear)
 	{
@@ -635,7 +635,278 @@ void CSimpleOpengl::DrawClearColor(COLORREF color)
 	SwapBuffers(m_hDc);									// OpenGL이 완료한 그림을 새롭게 화면에 그린다 - 현재 buffer에 그려진 것과 Frame에 그려진 것을 swap(Double buffer), 그리기 함수에서 glFlush 대신 사용
 }
 
-void CSimpleOpengl::DrawText()
+void CSimpleOpengl::SetClear()
+{
+	m_bDrawClear = TRUE;
+}
+
+void CSimpleOpengl::SetClearColor()
+{
+	m_bDrawClearColor = TRUE;
+}
+
+void CSimpleOpengl::SetDraw()
+{
+	m_bDraw = TRUE;
+	//m_bDrawText = TRUE;
+}
+
+void CSimpleOpengl::SetFont(CString srtFntName, int nSize, BOOL bBold)
+{
+	if (m_bFont)
+	{
+		if (m_Font.DeleteObject())
+			m_bFont = FALSE;
+	}
+
+	LOGFONT lfCtrl = { 0 };
+	lfCtrl.lfOrientation = 0;
+	lfCtrl.lfEscapement = 0;
+
+	lfCtrl.lfHeight = nSize;
+	lfCtrl.lfWeight = bBold ? FW_BOLD : FW_NORMAL;
+
+	lfCtrl.lfItalic = FALSE;
+	lfCtrl.lfUnderline = FALSE;
+	lfCtrl.lfStrikeOut = FALSE;
+
+	lfCtrl.lfCharSet = DEFAULT_CHARSET;
+	lfCtrl.lfQuality = DEFAULT_QUALITY;
+	lfCtrl.lfOutPrecision = OUT_DEFAULT_PRECIS;
+	lfCtrl.lfPitchAndFamily = DEFAULT_PITCH;
+	_tcscpy(lfCtrl.lfFaceName, srtFntName);
+
+	if (!m_bFont)
+	{
+		BOOL bCr = m_Font.CreateFontIndirect(&lfCtrl);
+		if (bCr)
+			m_bFont = TRUE;
+	}
+}
+
+
+void CSimpleOpengl::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	PopupMenu(nFlags, point);
+
+	CStatic::OnRButtonDown(nFlags, point);
+}
+BOOL CSimpleOpengl::GetRngDrawPnl(int nDrawPnlIdx, tagStrPcs& StrPcs, CPoint& ptLT, CPoint& ptRB)
+{
+	int nWorldMargin = 6;	// [mm] = [dot]
+	int nWorldStX = 3;		// [mm] = [dot]
+
+	CRect rtDispCtrl;
+	::GetClientRect(m_hCtrl, &rtDispCtrl);
+	int nWorldW = rtDispCtrl.right - rtDispCtrl.left - nWorldMargin;
+	int nWorldH = rtDispCtrl.bottom - rtDispCtrl.top;
+
+	double fWidth, fHeight;
+	double fData1, fData2, fData3, fData4;
+	double dPixelSize = 2.5; // [um/pixel]
+	double mmPxl = dPixelSize / 1000.0; // [mm]
+	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
+	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmSpace = 2.0;
+	double dDrawStPosX = 0.0;
+
+	int i = 0, k = 0, nR = -1, nC = -1;
+	int nTotPnl = 6, nSelMarkingPnl = 2;
+
+	stVertex v1, v2;
+	fData1 = (double)StrPcs.m_stFrameRgnPix[0].iStartX * mmPxl;	// left
+	fData2 = (double)StrPcs.m_stFrameRgnPix[0].iStartY * mmPxl;	// top
+	fData3 = (double)StrPcs.m_stFrameRgnPix[0].iEndX * mmPxl;	// right
+	fData4 = (double)StrPcs.m_stFrameRgnPix[0].iEndY * mmPxl;	// bottom
+	fWidth = (fData3 - fData1) + (dFrmMargin[0] + dFrmMargin[2]);
+	fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
+
+	fData1 += (double)nWorldStX;
+	fData1 += dFrmSpace * nDrawPnlIdx;
+
+	int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);// +(nWorldMargin + nWorldStX);
+	if ((nWorldW - nRealW) < 0.0)
+	{
+		int nNeedX = nRealW - nWorldW;
+		dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
+		dFrmOffset[0] = 0.0;
+	}
+	else
+		dFrmOffset[0] = (nWorldW - fWidth*nTotPnl) / 2.0;
+
+	dDrawStPosX = fWidth * dScaleX * nDrawPnlIdx;
+
+	if ((nWorldH - fHeight) < 0.0)
+	{
+		int nNeedY = fHeight - nWorldH;
+		dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
+		dFrmOffset[1] = 0.0;
+	}
+	else
+		dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+
+	fData1 += dFrmOffset[0] + dDrawStPosX;						// left
+	fData2 += dFrmOffset[1];									// top
+
+	fData3 = fData1 + fWidth * dScaleX;							// right
+	fData4 = fData2 + fHeight * dScaleY;						// bottom
+	fData2 -= dFrmMargin[1];									// top
+	fData4 += dFrmMargin[3];									// bottom
+
+	ptLT.x = fData1;											// left
+	ptLT.y = fData2;											// top
+	ptRB.x = fData3;											// right
+	ptRB.y = fData4;											// bottom
+
+	return TRUE;
+}
+
+void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
+{
+	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
+
+	COLORREF color = RGB(255, 255, 255);
+	int nWorldMargin = 6;	// [mm] = [dot]
+	int nWorldStX = 3;		// [mm] = [dot]
+
+	CRect rtDispCtrl;
+	::GetClientRect(m_hCtrl, &rtDispCtrl);
+	int nWorldW = rtDispCtrl.right - rtDispCtrl.left - nWorldMargin;
+	int nWorldH = rtDispCtrl.bottom - rtDispCtrl.top;
+
+	int i = 0, k = 0, nR = -1, nC = -1;
+	int nTotPnl = 6, nSelMarkingPnl = 2;
+	//int nMkedPnl = nTotPnl - nSelMarkingPnl - 1; // 6-2-1 = 3
+	//int nFromPnl = nSerial - nMkedPnl - 1; // 6-3-1 = 2
+
+	int nTotStrip = StrPcs.m_nFrameRgnNum;
+	int nTotPcs = StrPcs.m_nPieceRgnNum;
+
+	double fWidth, fHeight;
+	double fData1, fData2, fData3, fData4;
+	double dPixelSize = 2.5; // [um/pixel]
+	double mmPxl = dPixelSize / 1000.0; // [mm]
+	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
+	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmSpace = 2.0;
+	double dDrawStPosX = 0.0;
+	
+	for (k = 0; k < nTotPnl; k++) // Draw Panel from Left to Right. 
+	{
+		stVertex v1, v2;
+		for (i = 0; i < nTotStrip; i++)
+		{
+			fData1 = (double)StrPcs.m_stFrameRgnPix[i].iStartX * mmPxl;	// left
+			fData2 = (double)StrPcs.m_stFrameRgnPix[i].iStartY * mmPxl;	// top
+			fData3 = (double)StrPcs.m_stFrameRgnPix[i].iEndX * mmPxl;	// right
+			fData4 = (double)StrPcs.m_stFrameRgnPix[i].iEndY * mmPxl;	// bottom
+			fWidth = (fData3 - fData1) + (dFrmMargin[0] + dFrmMargin[2]);
+			fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
+
+			fData1 += (double)nWorldStX;
+			fData1 += dFrmSpace * k;
+
+			if (!i)
+			{
+				int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);// +(nWorldMargin + nWorldStX);
+				if ((nWorldW - nRealW) < 0.0)
+				{
+					int nNeedX = nRealW - nWorldW;
+					dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
+					dFrmOffset[0] = 0.0;
+				}
+				else
+					dFrmOffset[0] = (nWorldW - fWidth*nTotPnl) / 2.0;
+
+				dDrawStPosX = fWidth * dScaleX * k;
+
+				if ((nWorldH - fHeight) < 0.0)
+				{
+					int nNeedY = fHeight - nWorldH;
+					dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
+					dFrmOffset[1] = 0.0;
+				}
+				else
+					dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+			}
+			
+			fData1 += dFrmOffset[0] + dDrawStPosX;						// left
+			fData2 += dFrmOffset[1];									// top
+
+			fData3 = fData1 + fWidth * dScaleX;							// right
+			fData4 = fData2 + fHeight * dScaleY;						// bottom
+			fData2 -= dFrmMargin[1];									// top
+			fData4 += dFrmMargin[3];									// bottom
+
+			if (k == nSelMarkingPnl || k == nSelMarkingPnl+1)
+				color = RGB(255, 0, 0);
+			else
+				color = RGB(255, 255, 255);
+
+			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
+			AddLine(v1, v2, color);
+
+			v1.x = fData1; v1.y = fData4; v1.z = 0.0;
+			v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+			AddLine(v1, v2, color);
+
+			v1.x = fData3; v1.y = fData4; v1.z = 0.0;
+			v2.x = fData3; v2.y = fData2; v2.z = 0.0;
+			AddLine(v1, v2, color);
+
+			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
+			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
+			AddLine(v1, v2, color);
+		}
+
+		for (i = 0; i < nTotPcs; i++)
+		{
+			double fNeed = 0.0;
+			pParent->GetMatrix(i, nR, nC);
+			fData1 = (double)StrPcs.m_stPieceRgnPix[i].iStartX * mmPxl;	// left
+			fData2 = (double)StrPcs.m_stPieceRgnPix[i].iStartY * mmPxl;	// top
+			fData3 = (double)StrPcs.m_stPieceRgnPix[i].iEndX * mmPxl;	// right
+			fData4 = (double)StrPcs.m_stPieceRgnPix[i].iEndY * mmPxl;	// bottom
+			fWidth = (fData3 - fData1) * dScaleX;
+			fHeight = (fData4 - fData2) * dScaleY;
+			fNeed = (fData3 - fData1) - fWidth;
+
+			fData1 += (double)nWorldStX;
+			fData1 += dFrmSpace * k;
+			fData1 += dFrmOffset[0];									// left
+			fData2 += dFrmOffset[1];									// top
+
+			fData1 += dDrawStPosX - (fNeed*(double)nC);					// left
+			fData1 += dFrmMargin[0] * dScaleX;							// left
+
+			fData3 = fData1 + fWidth;									// right
+			fData4 = fData2 + fHeight;									// bottom
+
+			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
+			AddLine(v1, v2);
+
+			v1.x = fData1; v1.y = fData4; v1.z = 0.0;
+			v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+			AddLine(v1, v2);
+
+			v1.x = fData3; v1.y = fData4; v1.z = 0.0;
+			v2.x = fData3; v2.y = fData2; v2.z = 0.0;
+			AddLine(v1, v2);
+
+			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
+			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
+			AddLine(v1, v2);
+		}
+	}
+	Refresh();
+}
+
+void CSimpleOpengl::DrawTestText()
 {
 	// Draw the text
 	CRect rect;
@@ -725,218 +996,152 @@ void CSimpleOpengl::DrawText()
 	}
 }
 
-
-void CSimpleOpengl::SetClear()
+void CSimpleOpengl::DrawText(CString sText, CPoint ptPnt, COLORREF rgb)
 {
-	m_bDrawClear = TRUE;
-}
+	// Draw the text
+	CRect rect;
+	::GetClientRect(m_hCtrl, &rect);
+	CDC* pDC = m_pDc;
+	CString strPars, strRem;
 
-void CSimpleOpengl::SetClearColor()
-{
-	m_bDrawClearColor = TRUE;
-}
-
-void CSimpleOpengl::SetDraw()
-{
-	m_bDraw = TRUE;
-	//m_bDrawText = TRUE;
-}
-
-void CSimpleOpengl::SetFont(CString srtFntName, int nSize, BOOL bBold)
-{
-	if (m_bFont)
+	HFONT hOldFont = NULL;
+	//Sets the font
+	if (m_Font.GetSafeHandle() != NULL)
 	{
-		if (m_Font.DeleteObject())
-			m_bFont = FALSE;
+		hOldFont = (HFONT)pDC->SelectObject(m_Font.GetSafeHandle());
 	}
 
-	LOGFONT lfCtrl = { 0 };
-	lfCtrl.lfOrientation = 0;
-	lfCtrl.lfEscapement = 0;
+	int nMode = pDC->SetBkMode(TRANSPARENT);
+	COLORREF crTextOld = pDC->SetTextColor(rgb);
+	int nLen = sText.GetLength();
 
-	lfCtrl.lfHeight = nSize;
-	lfCtrl.lfWeight = bBold ? FW_BOLD : FW_NORMAL;
+	pDC->TextOut(ptPnt.x, ptPnt.y, sText);
+	pDC->SetBkMode(nMode);
 
-	lfCtrl.lfItalic = FALSE;
-	lfCtrl.lfUnderline = FALSE;
-	lfCtrl.lfStrikeOut = FALSE;
-
-	lfCtrl.lfCharSet = DEFAULT_CHARSET;
-	lfCtrl.lfQuality = DEFAULT_QUALITY;
-	lfCtrl.lfOutPrecision = OUT_DEFAULT_PRECIS;
-	lfCtrl.lfPitchAndFamily = DEFAULT_PITCH;
-	_tcscpy(lfCtrl.lfFaceName, srtFntName);
-
-	if (!m_bFont)
+	//Reset the old font
+	if (hOldFont != NULL)
 	{
-		BOOL bCr = m_Font.CreateFontIndirect(&lfCtrl);
-		if (bCr)
-			m_bFont = TRUE;
+		pDC->SelectObject(hOldFont);
 	}
 }
 
-
-void CSimpleOpengl::OnRButtonDown(UINT nFlags, CPoint point)
+void CSimpleOpengl::EraseText(CRect rect)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	PopupMenu(nFlags, point);
-
-	CStatic::OnRButtonDown(nFlags, point);
+	// Draw the text
+	CDC* pDC = m_pDc;
+	CBrush brush, *Oldbrush;
+	brush.CreateSolidBrush(RGB(0, 0, 0));
+	Oldbrush = pDC->SelectObject(&brush);
+	pDC->FillRect(rect, &brush);
+	pDC->SelectObject(Oldbrush);
+	brush.DeleteObject();
 }
 
-void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
+void CSimpleOpengl::DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 {
-	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
+	int i, k;
+	CString sPnlDefNum, sPnlNum;
 
-	COLORREF color = RGB(255, 255, 255);
-	int nWorldMargin = 6;	// [mm] = [dot]
-	int nWorldStX = 3;		// [mm] = [dot]
+	int nCount = arPcr.GetSize();
 
-	CRect rtDispCtrl;
-	::GetClientRect(m_hCtrl, &rtDispCtrl);
-	int nWorldW = rtDispCtrl.right - rtDispCtrl.left - nWorldMargin;
-	int nWorldH = rtDispCtrl.bottom - rtDispCtrl.top;
+	if (nCount < 1)
+		return;
 
-	int i = 0, k = 0, nR = -1, nC = -1;
-	int nTotPnl = 6, nSelMarkingPnl = 2;
-	//int nMkedPnl = nTotPnl - nSelMarkingPnl - 1; // 6-2-1 = 3
-	//int nFromPnl = nSerial - nMkedPnl - 1; // 6-3-1 = 2
-
-	int nTotStrip = StrPcs.m_nFrameRgnNum;
-	int nTotPcs = StrPcs.m_nPieceRgnNum;
-
-
-	double fWidth, fHeight;
-	double fData1, fData2, fData3, fData4;
-	double dPixelSize = 2.5; // [um/pixel]
-	double mmPxl = dPixelSize / 1000.0; // [mm]
-	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
-	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
-	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
-	double dFrmSpace = 2.0;
-	double dDrawStPosX = 0.0;
-	
-	for (k = 0; k < nTotPnl; k++) // Draw Panel from Left to Right. 
+	int nTotPnl = 6;
+	int nSelMarkingPnl = 2; // Index start from right
+	int *pEstimatedPnlNum = new int[nTotPnl];
+	int *pPnlNum = new int[nTotPnl];
+	int *pPnlDefNum = new int[nTotPnl];
+	CPcr Pcr;
+	int nPcrIdx = -1;
+	for (i = 0; i < nCount; i++)
 	{
-		if (k == nSelMarkingPnl)
+		Pcr = arPcr.GetAt(i);
+		if (Pcr.GetSerial() == nSerial)
 		{
-			; // Panel edge is Red Line
+			nPcrIdx = i;
+			break;
 		}
-		else if (k == nSelMarkingPnl + 1)
+	}
+	if (nPcrIdx < 0)
+	{
+		AfxMessageBox(_T("선택한 시리얼에 대한 PCR 정보가 없습니다."));
+		delete[] pEstimatedPnlNum;
+		delete[] pPnlNum;
+		delete[] pPnlDefNum;
+		return;
+	}
+
+	CRect rt;
+	CDC* pDC = m_pDc;
+	int nDispPnlNum = -1;
+	int nDispPcrIdx = -1;
+	for (k = 0; k < nTotPnl; k++) // Index start from left
+	{
+		pEstimatedPnlNum[k] = nSerial - (nTotPnl - (nSelMarkingPnl + k + 1));
+		nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + k + 1));
+		if (nDispPcrIdx >= 0)
 		{
-			; // Panel edge is Red Line
+			Pcr = arPcr[nDispPcrIdx];
+			nDispPnlNum = Pcr.GetSerial();
+			if (pEstimatedPnlNum[k] != nDispPnlNum)
+				AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
+			pPnlNum[k] = nDispPnlNum;
+			pPnlDefNum[k] = Pcr.GetTotalDef();
 		}
 		else
 		{
-			; // Panel edge is White Line
-		}
-		
-		stVertex v1, v2;
-		for (i = 0; i < nTotStrip; i++)
-		{
-			fData1 = (double)StrPcs.m_stFrameRgnPix[i].iStartX * mmPxl;	// left
-			fData2 = (double)StrPcs.m_stFrameRgnPix[i].iStartY * mmPxl;	// top
-			fData3 = (double)StrPcs.m_stFrameRgnPix[i].iEndX * mmPxl;	// right
-			fData4 = (double)StrPcs.m_stFrameRgnPix[i].iEndY * mmPxl;	// bottom
-			fWidth = (fData3 - fData1) + (dFrmMargin[0] + dFrmMargin[2]);
-			fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
-
-			fData1 += (double)nWorldStX;
-			fData1 += dFrmSpace * k;
-
-			if (!i)
-			{
-				int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);
-				if ((nWorldW - nRealW) < 0.0)
-				{
-					int nNeedX = nRealW - nWorldW;
-					dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
-					dFrmOffset[0] = 0.0;
-				}
-				else
-					dFrmOffset[0] = (nWorldW - fWidth*nTotPnl) / 2.0;
-
-				dDrawStPosX = fWidth * dScaleX * k;
-
-				if ((nWorldH - fHeight) < 0.0)
-				{
-					int nNeedY = fHeight - nWorldH;
-					dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
-					dFrmOffset[1] = 0.0;
-				}
-				else
-					dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
-			}
-			
-			fData1 += dFrmOffset[0] + dDrawStPosX;						// left
-			fData2 += dFrmOffset[1];									// top
-
-			fData3 = fData1 + fWidth * dScaleX;							// right
-			fData4 = fData2 + fHeight * dScaleY;						// bottom
-			fData2 -= dFrmMargin[1];									// top
-			fData4 += dFrmMargin[3];									// bottom
-
-			if (k == nSelMarkingPnl || k == nSelMarkingPnl+1)
-				color = RGB(255, 0, 0);
-			else
-				color = RGB(255, 255, 255);
-
-			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
-			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2, color);
-
-			v1.x = fData1; v1.y = fData4; v1.z = 0.0;
-			v2.x = fData3; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2, color);
-
-			v1.x = fData3; v1.y = fData4; v1.z = 0.0;
-			v2.x = fData3; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2, color);
-
-			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
-			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2, color);
+			pPnlNum[k] = -1;
+			pPnlDefNum[k] = -1;
 		}
 
-		for (i = 0; i < nTotPcs; i++)
+		if (pPnlDefNum[k] < 0)
 		{
-			double fNeed = 0.0;
-			pParent->GetMatrix(i, nR, nC);
-			fData1 = (double)StrPcs.m_stPieceRgnPix[i].iStartX * mmPxl;	// left
-			fData2 = (double)StrPcs.m_stPieceRgnPix[i].iStartY * mmPxl;	// top
-			fData3 = (double)StrPcs.m_stPieceRgnPix[i].iEndX * mmPxl;	// right
-			fData4 = (double)StrPcs.m_stPieceRgnPix[i].iEndY * mmPxl;	// bottom
-			fWidth = (fData3 - fData1) * dScaleX;
-			fHeight = (fData4 - fData2) * dScaleY;
-			fNeed = (fData3 - fData1) - fWidth;
+			sPnlDefNum.Format(_T(""));
+			sPnlNum.Format(_T(""));
+		}
+		else
+		{
+			sPnlDefNum.Format(_T("Total: %d"), pPnlDefNum[k]);
+			sPnlNum.Format(_T("%d"), pPnlNum[k]);
+		}
+		CSize Extent = pDC->GetTextExtent(sPnlDefNum);
+		CPoint ptPnlDefLt, ptPnlDefRb, ptPnlDefPnt;
+		CPoint ptPnlLt, ptPnlRb, ptPnlPnt;
+		GetRngDrawPnl(k, StrPcs, ptPnlLt, ptPnlRb);
+		ptPnlDefPnt.x = ptPnlLt.x + ((ptPnlRb.x - ptPnlLt.x) - Extent.cx) / 2;
+		ptPnlDefPnt.y = ptPnlLt.y - Extent.cy - LINE_SPACE;
 
-			fData1 += (double)nWorldStX;
-			fData1 += dFrmSpace * k;
-			fData1 += dFrmOffset[0];									// left
-			fData2 += dFrmOffset[1];									// top
+		Extent = pDC->GetTextExtent(sPnlNum);
+		ptPnlPnt.x = ptPnlLt.x + ((ptPnlRb.x - ptPnlLt.x) - Extent.cx) / 2;
+		ptPnlPnt.y = ptPnlRb.y + LINE_SPACE;
 
-			fData1 += dDrawStPosX - (fNeed*(double)nC);					// left
-			fData1 += dFrmMargin[0];									// left
+		rt.left = ptPnlLt.x; rt.top = ptPnlDefPnt.y;
+		rt.right = ptPnlRb.x; rt.bottom = ptPnlDefPnt.y + Extent.cy;
+		EraseText(rt);
+		rt.left = ptPnlLt.x; rt.top = ptPnlPnt.y ;
+		rt.right = ptPnlRb.x; rt.bottom = ptPnlRb.y + Extent.cy + LINE_SPACE;
+		EraseText(rt);
 
-			fData3 = fData1 + fWidth;									// right
-			fData4 = fData2 + fHeight;									// bottom
-
-			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
-			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2);
-
-			v1.x = fData1; v1.y = fData4; v1.z = 0.0;
-			v2.x = fData3; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2);
-
-			v1.x = fData3; v1.y = fData4; v1.z = 0.0;
-			v2.x = fData3; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2);
-
-			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
-			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2);
+		if (nSelMarkingPnl + 1 == nTotPnl - (k + 1))
+		{
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB(255, 0, 0));
+			DrawText(sPnlNum, ptPnlPnt, RGB(255, 0, 0));
+		}
+		else if (nSelMarkingPnl == nTotPnl - (k + 1))
+		{
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB(255, 0, 0));
+			DrawText(sPnlNum, ptPnlPnt, RGB(255, 0, 0));
+		}
+		else
+		{
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB(255, 255, 255));
+			DrawText(sPnlNum, ptPnlPnt, RGB(255, 255, 255));
 		}
 	}
-	Refresh();
+
+	delete[] pEstimatedPnlNum;
+	delete[] pPnlNum;
+	delete[] pPnlDefNum;
 }
+

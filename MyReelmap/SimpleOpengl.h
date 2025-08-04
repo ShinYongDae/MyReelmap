@@ -124,6 +124,7 @@ struct stColor
 
 // CSimpleOpengl
 #include "SimpleCamMaster.h"
+#include "SimpleReelmap.h"
 
 class CSimpleOpengl : public CStatic //public CWnd
 {
@@ -170,7 +171,11 @@ class CSimpleOpengl : public CStatic //public CWnd
 	void Draw();
 	void DrawClear();
 	void DrawClearColor(COLORREF color);
-	void DrawText();
+	void DrawTestText();
+	void DrawText(CString sText, CPoint ptPnt, COLORREF rgb);
+
+	BOOL GetRngDrawPnl(int nDrawPnlIdx, tagStrPcs& StrPcs, CPoint& ptLT, CPoint& ptRB);
+	void EraseText(CRect rect);
 
 public:
 	CSimpleOpengl(CWnd* pParent);
@@ -199,6 +204,7 @@ public:
 	void AddText(CString str, CPoint pos = {0,0}, COLORREF color = RGB(255, 255, 255)); // DWORD COLORREF 0x00bbggrr
 
 	void DrawStrPcs(tagStrPcs& StrPcs);
+	void DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs);
 
 
 protected:

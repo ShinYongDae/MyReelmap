@@ -212,6 +212,10 @@ void CMyReelmapDlg::OnBnClickedButton2()
 void CMyReelmapDlg::OnBnClickedButton3()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CString sVal;
+	GetDlgItem(IDC_EDIT3)->GetWindowText(sVal);
+	int nSerial = _ttoi(sVal);
+	DrawPnlDefNum(nSerial);
 }
 
 tagStrPcs& CMyReelmapDlg::GetAddrStrPcs()
@@ -219,86 +223,22 @@ tagStrPcs& CMyReelmapDlg::GetAddrStrPcs()
 	return m_CamMaster.GetAddrStrPcs();
 }
 
+CArPcr& CMyReelmapDlg::GetAddrArPcr()
+{
+	return m_pReelmap[0]->GetAddrArPcr();
+}
+
 BOOL CMyReelmapDlg::GetMatrix(int nPcsId, int &nR, int &nC)
 {
 	return m_pReelmap[0]->GetMatrix(nPcsId, nR, nC);
 }
+
 void CMyReelmapDlg::DrawStrPcs()
 {
-	//m_pReelmap[0]->DrawStrPcs();
 	m_pOpengl->DrawStrPcs(GetAddrStrPcs());
+}
 
-	//stVertex v1, v2;
-	//v1.x = 500; v1.y = 500; v1.z = 0.0;
-	//v2.x = 1100; v2.y = 500; v2.z = 0.0;
-	//m_Opengl.AddLine(v1, v2);
-	//m_Opengl.Refresh();
-/*
-	int k, nTotPnl = 6, nSelMarkingPnl = 2;
-
-	for (k = nTotPnl - 1; k >= 0; k--)
-	{
-		if (k == nSelMarkingPnl)
-		{
-			; // Panel edge is Red Line 
-		}
-		else if (k == nSelMarkingPnl + 1)
-		{
-			; // Panel edge is Red Line 
-		}
-		else
-		{
-			; // Panel edge is White Line 
-		}
-
-		//int nIdx = pDoc->GetPcrIdx1(m_pPnlNum[k]);
-		if (m_pReelmap[0]->Get == -1 || pDoc->m_pPcr[nTestMode][nIdx]->m_nErrPnl == -2)
-		{
-			// Draw Cross....
-			GVertex vtPnt[4];
-			vtPnt[0] = m_pFrmRgn[k][0];
-
-			vtPnt[1].x = m_pFrmRgn[k][0].x;
-			vtPnt[1].y = m_pFrmRgn[k][1].y;
-			vtPnt[1].z = m_pFrmRgn[k][1].z;
-
-			vtPnt[2] = m_pFrmRgn[k][1];
-
-			vtPnt[3].x = m_pFrmRgn[k][1].x;
-			vtPnt[3].y = m_pFrmRgn[k][0].y;
-			vtPnt[3].z = m_pFrmRgn[k][0].z;
-
-			GVGLDrawInit(GV_LINE, 3, m_rgbRed);
-			GVGLDrawVertex(vtPnt[0]);
-			GVGLDrawVertex(vtPnt[2]);
-			GVGLDrawShow();
-
-			GVGLDrawInit(GV_LINE, 3, m_rgbRed);
-			GVGLDrawVertex(vtPnt[1]);
-			GVGLDrawVertex(vtPnt[3]);
-			GVGLDrawShow();
-		}
-
-		for (i = 0; i < m_nTotPcs; i++)
-		{
-			if (m_pReelMap)//pDoc->
-			{
-				if (m_pPnlNum[k] <= 0)
-				{
-					GVGLDrawInit(GV_RECTF, 3, m_rgbWhite);
-				}
-				else
-				{
-					nDef = m_pReelMap->pPcsDef[k][i];
-					if (nDef)
-						int iii = i;
-
-					GVGLDrawInit(GV_RECTF, 3, m_rgbDef[nDef]);
-				}
-			}
-			GVGLDrawRectF(m_pPcsPnt[k][i][0], m_pPcsPnt[k][i][1]); // CamMaster의 PCS 인덱스와 그 인덱스의 영역 정보
-			GVGLDrawShow();
-		}
-	}
-	*/
+void CMyReelmapDlg::DrawPnlDefNum(int nSerial)
+{
+	m_pOpengl->DrawPnlDefNum(nSerial, GetAddrArPcr(), GetAddrStrPcs());
 }

@@ -686,3 +686,7 @@ CString CSimpleReelmap::CharToString(const char *szStr)
 	return strRet;
 }
 
+CArPcr& CSimpleReelmap::GetAddrArPcr()
+{
+	return m_arPcr[0];
+}

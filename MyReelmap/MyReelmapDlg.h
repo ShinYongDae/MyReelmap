@@ -22,6 +22,7 @@ class CMyReelmapDlg : public CDialog
 
 	void Disp();
 	void DrawStrPcs();
+	void DrawPnlDefNum(int nSerial);
 
 // 생성입니다.
 public:
@@ -34,6 +35,7 @@ public:
 #endif
 
 public:
+	CArPcr& GetAddrArPcr();
 	tagStrPcs& GetAddrStrPcs();
 	BOOL GetMatrix(int nPcsId, int &nR, int &nC);
 
