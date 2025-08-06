@@ -50,6 +50,12 @@
 #define RGB_POSTIT		RGB(240,233,134)
 #define RGB_DARK_BLUE	RGB(68,136,204)
 #define RGB_FRAME		RGB(212,208,200)
+#define RGB_LTRED       RGB(255,128,64)
+#define RGB_LTPURPLE	RGB(226,233,251)
+#define RGB_LTMAGENTA   RGB(255,64,255)
+#define RGB_LTYELLOW    RGB(255,255,128)
+#define RGB_LTPINK      RGB(255,64,128)
+
 
 #define RGB_DARK_GREEN		RGB(0,125,60)
 #define RGB_LT_PURPLE		RGB(179,179,255)
@@ -103,6 +109,19 @@ struct stLine
 };
 typedef CArray<stLine, stLine> CArLine;
 
+struct stRect
+{
+	stVertex v1, v2;
+	COLORREF color;
+	stRect()
+	{
+		v1.x = 0; v1.y = 0; v1.z = 0;
+		v2.x = 0; v2.y = 0; v2.z = 0;
+		color = RGB(255, 255, 255);
+	}
+};
+typedef CArray<stRect, stRect> CArRect;
+
 struct stText
 {
 	CString str;
@@ -139,6 +158,7 @@ class CSimpleOpengl : public CStatic //public CWnd
 	CRect m_rtDispCtrl;
 	int m_nWorldW, m_nWorldH;
 	CArLine m_arLine;
+	CArRect m_arRect;
 	CArText m_arText;
 
 	BOOL m_bInit;
@@ -154,6 +174,9 @@ class CSimpleOpengl : public CStatic //public CWnd
 	COLORREF m_crText;
 
 	CMenu *m_pMenu;
+	int m_nSerial;
+	CArPcr* m_arPcr;
+	tagStrPcs* m_StrPcs;
 
 	BOOL CreateWndForm(DWORD dwStyle);
 
@@ -173,6 +196,11 @@ class CSimpleOpengl : public CStatic //public CWnd
 	void DrawClearColor(COLORREF color);
 	void DrawTestText();
 	void DrawText(CString sText, CPoint ptPnt, COLORREF rgb);
+	void DrawPnlDefNum();
+
+	void RemoveAllLine();
+	void RemoveAllRect();
+	void RemoveAllText();
 
 	BOOL GetRngDrawPnl(int nDrawPnlIdx, tagStrPcs& StrPcs, CPoint& ptLT, CPoint& ptRB);
 	void EraseText(CRect rect);
@@ -182,7 +210,6 @@ public:
 	CSimpleOpengl(HWND& hCtrl, CWnd* pParent = NULL);
 	virtual ~CSimpleOpengl();
 	void SetHwnd(HWND hCtrlWnd, CWnd* pParent=NULL);
-	//void SetHwnd(CDC* pDc, CWnd* pParent = NULL);
 	void Refresh();
 
 	static void ProcThrd(const LPVOID lpContext);
@@ -194,17 +221,17 @@ public:
 	void SetFont(CString srtFntName, int nSize = 10, BOOL bBold = FALSE);
 
 	void SetupResize(int width, int height);
-	//void SetupLight(GLfloat R = 0.0f, GLfloat G = 0.0f, GLfloat B = 0.0f, GLfloat A = 1.0f, BOOL CirclePoint = 1);
-	//void SetupCamera(GLfloat *cameraposmap, int W, int H, GLfloat *Angle);
 	void Init();
 	BOOL IsDraw();
 
 public:
 	void AddLine(stVertex v1, stVertex v2, COLORREF color = RGB(255, 255, 255));
+	void AddRect(stVertex v1, stVertex v2, COLORREF color = RGB(255, 255, 255));
 	void AddText(CString str, CPoint pos = {0,0}, COLORREF color = RGB(255, 255, 255)); // DWORD COLORREF 0x00bbggrr
 
 	void DrawStrPcs(tagStrPcs& StrPcs);
 	void DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs);
+	void DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs);
 
 
 protected:

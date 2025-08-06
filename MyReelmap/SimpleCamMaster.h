@@ -13,6 +13,38 @@
 #define MAX_STRIP	4
 #endif
 
+#define MAX_DEF						30
+#define DEF_NONE					0		// NONE 	
+#define DEF_NICK					1		// Nick 	
+#define DEF_PROTRUSION				2		// Excessive line width
+#define DEF_SPACE					3		// Minimum space violation
+#define DEF_OPEN					4		// Pattern open
+#define DEF_SHORT					5		// Pattern short
+#define DEF_USHORT					6		// Micro short
+#define DEF_PINHOLE					7		// Void, pinhole
+#define DEF_HOLE_MISS				8		// Missing Hole
+#define DEF_EXTRA					9		// Island
+#define DEF_PAD						10		// Precision Pattern Error
+#define DEF_HOLE_POSITION			11      // Location Hole 
+#define DEF_POI						12		// Point of interest (Virtual defect by operator specfied)
+#define DEF_VH_POSITION			    13		// Via hole positionning
+#define DEF_VH_MISS					14		// Via hole missing
+#define DEF_HOLE_DEFECT		    	15		// Hole burr..
+#define DEF_HOLE_OPEN				16		// Hole open
+#define DEF_VH_OPEN					17	    // VH open
+#define DEF_VH_DEF					18	    // Reserved
+#define DEF_EDGE_NICK				19		// Edge Nick
+#define DEF_EDGE_PROT				20	    // Edge Protrusion
+#define DEF_EDGE_SPACE				21	    // Edge Space
+#define DEF_USER_DEFINE_1			22	    // User Define 1
+#define DEF_NARROW					23	    // User Define 2
+#define DEF_WIDE					24	    // User Define 3
+#define DEF_FIXED_DEF				25	    // User Define 3
+#define DEF_VH_SIZE					26	    // User Define 3
+#define DEF_VH_EDGE					27	    // User Define 3
+#define DEF_LIGHT					28	
+#define DEF_INNER					29	
+
 typedef struct tagREGIONS_FRAME 
 {
 	int iStartX, iStartY;

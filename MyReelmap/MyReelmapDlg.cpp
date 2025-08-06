@@ -215,7 +215,13 @@ void CMyReelmapDlg::OnBnClickedButton3()
 	CString sVal;
 	GetDlgItem(IDC_EDIT3)->GetWindowText(sVal);
 	int nSerial = _ttoi(sVal);
+	DrawPnlDef(nSerial);
 	DrawPnlDefNum(nSerial);
+}
+
+COLORREF CMyReelmapDlg::GetDefColor(int nDefCode)
+{
+	return m_pReelmap[0]->GetDefColor(nDefCode);
 }
 
 tagStrPcs& CMyReelmapDlg::GetAddrStrPcs()
@@ -241,4 +247,10 @@ void CMyReelmapDlg::DrawStrPcs()
 void CMyReelmapDlg::DrawPnlDefNum(int nSerial)
 {
 	m_pOpengl->DrawPnlDefNum(nSerial, GetAddrArPcr(), GetAddrStrPcs());
+}
+
+void CMyReelmapDlg::DrawPnlDef(int nSerial)
+{
+	m_pOpengl->DrawPnlDef(nSerial, GetAddrArPcr(), GetAddrStrPcs());
+	m_pOpengl->SetDraw();
 }

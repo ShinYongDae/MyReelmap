@@ -23,6 +23,7 @@ class CMyReelmapDlg : public CDialog
 	void Disp();
 	void DrawStrPcs();
 	void DrawPnlDefNum(int nSerial);
+	void DrawPnlDef(int nSerial);
 
 // 생성입니다.
 public:
@@ -38,6 +39,7 @@ public:
 	CArPcr& GetAddrArPcr();
 	tagStrPcs& GetAddrStrPcs();
 	BOOL GetMatrix(int nPcsId, int &nR, int &nC);
+	COLORREF GetDefColor(int nDefCode);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.

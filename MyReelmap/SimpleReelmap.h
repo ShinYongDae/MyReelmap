@@ -5,6 +5,12 @@
 
 #define MAX_STRIP	4
 
+#ifndef MAX_DEF
+#define MAX_DEF						30
+#endif
+
+#define PATH_CONFIG				_T("C:\\R2RSet\\Config.ini")
+
 // CSimpleReelmap
 
 class CSimpleReelmap : public CWnd
@@ -26,6 +32,12 @@ class CSimpleReelmap : public CWnd
 	BOOL m_bLock;
 	int m_nMaxRow, m_nMaxCol, m_nActionCode;
 
+	COLORREF m_rgbDef[MAX_DEF];
+	CString m_sKorDef[MAX_DEF], m_sEngDef[MAX_DEF];
+	char m_cBigDef[MAX_DEF], m_cSmallDef[MAX_DEF];
+	int m_nOdr[MAX_DEF];
+	int m_nBkColor[3]; //RGB
+
 	BOOL IsShare(int &nSerial);
 	BOOL Add(int nSerial);
 	BOOL ShiftToBuffer(int nSerial);
@@ -42,6 +54,8 @@ class CSimpleReelmap : public CWnd
 	void Free();
 
 	int m_nCMstTotPcs;
+	BOOL LoadDefectTableIni();
+	void InitColor();
 
 public:
 	CSimpleReelmap(CString sPath, CWnd* pParent = NULL);
@@ -55,6 +69,7 @@ public:
 	BOOL Load();
 
 	CArPcr& GetAddrArPcr();
+	COLORREF GetDefColor(int nDefCode);
 
 protected:
 	void ThreadEnd();

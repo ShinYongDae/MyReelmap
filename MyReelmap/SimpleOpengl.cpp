@@ -28,11 +28,15 @@ CSimpleOpengl::CSimpleOpengl(CWnd* pParent/*=NULL*/)
 	m_crText = RGB_WHITE;
 
 	m_pMenu = NULL;
+	m_nSerial = 0;
 
 	m_bDraw = FALSE;
 	m_bDrawText = FALSE;
 	m_bDrawClear = FALSE;
 	m_bDrawClearColor = FALSE;
+
+	m_arPcr = NULL;
+	m_StrPcs = NULL;
 
 	ThreadStart();
 }
@@ -55,6 +59,9 @@ CSimpleOpengl::CSimpleOpengl(HWND& hCtrl, CWnd* pParent/*=NULL*/)
 	m_bDrawClear = FALSE;
 	m_bDrawClearColor = FALSE;
 
+	m_arPcr = NULL;
+	m_StrPcs = NULL;
+
 	m_pDc = new CClientDC(FromHandle(hCtrl));
 	CreateWndForm(WS_CHILD | WS_OVERLAPPED);
 	ThreadStart();
@@ -66,6 +73,9 @@ CSimpleOpengl::~CSimpleOpengl()
 	Sleep(30);
 	t1.join();
 
+	RemoveAllLine();
+	RemoveAllRect();
+	RemoveAllText();
 
 	if (m_bFont)
 	{
@@ -90,6 +100,32 @@ CSimpleOpengl::~CSimpleOpengl()
 	{
 		delete m_pMenu;
 		m_pMenu = NULL;
+	}
+}
+void CSimpleOpengl::RemoveAllLine()
+{
+	int nTotal = m_arLine.GetCount();
+	if (nTotal > 0)
+	{
+		m_arLine.RemoveAll();
+	}
+}
+
+void CSimpleOpengl::RemoveAllRect()
+{
+	int nTotal = m_arRect.GetCount();
+	if (nTotal > 0)
+	{
+		m_arRect.RemoveAll();
+	}
+}
+
+void CSimpleOpengl::RemoveAllText()
+{
+	int nTotal = m_arText.GetCount();
+	if (nTotal > 0)
+	{
+		m_arText.RemoveAll();
 	}
 }
 
@@ -341,7 +377,7 @@ BOOL CSimpleOpengl::ProcOpengl()
 	else if (m_bDrawText)
 	{
 		m_bDrawText = FALSE;
-		DrawTestText();
+		//DrawTestText();
 	}
 	else if (m_bDrawClear)
 	{
@@ -431,8 +467,11 @@ void CSimpleOpengl::DrawBegin(int nMode, int nSize, COLORREF color)
 		return;
 
 	glPushMatrix();																// Martrix상태를 스택에 넣는다.		
-
-	glColor4f(GetRValue(color), GetGValue(color), GetBValue(color), 0.0);		// drawing color를 설정한다.
+	GLfloat red = GetRValue(color) / 255.0;
+	GLfloat green = GetGValue(color) / 255.0;
+	GLfloat blue = GetBValue(color) / 255.0;
+	GLfloat alpa = 0.0;
+	glColor4f(red, green, blue, alpa);		// drawing color를 설정한다.
 
 	/* glBegin ~ glEnd 블록 사이에 위치만을 가지는 정점만을 정의함
 	모드				설명
@@ -586,29 +625,56 @@ void CSimpleOpengl::AddText(CString str, CPoint pos, COLORREF color)
 	m_arText.Add(_text);
 }
 
+void CSimpleOpengl::AddRect(stVertex v1, stVertex v2, COLORREF color)
+{
+	stRect _rect;
+	_rect.v1 = v1;
+	_rect.v2 = v2;
+	_rect.color = color;
+	m_arRect.Add(_rect);
+}
+
 void CSimpleOpengl::Draw()
 {
+	DrawClear();
+
 	int i, nTotal;
-	stLine _line;
-	stColor color;
 
 	nTotal = m_arLine.GetCount();
-
-	if (nTotal <= 0)	return;
-
-
-	for (i = 0; i < nTotal; i++)
+	if (nTotal > 0)
 	{
-		_line = m_arLine.GetAt(i);
-		DrawBegin(Opengl::modLine, 1, _line.color);
-		DrawLine(_line.v1, _line.v2);
-		DrawEnd();
+		stLine _line;
+		for (i = 0; i < nTotal; i++)
+		{
+			_line = m_arLine.GetAt(i);
+			DrawBegin(Opengl::modLine, 1, _line.color);
+			DrawLine(_line.v1, _line.v2);
+			DrawEnd();
+		}
+	}
+	else
+		return;
+
+	nTotal = m_arRect.GetCount();
+	if (nTotal > 0)
+	{
+		stRect _rect;
+		for (i = 0; i < nTotal; i++)
+		{
+			_rect = m_arRect.GetAt(i);
+			DrawBegin(Opengl::modRectF, 1, _rect.color);
+			DrawRect(_rect.v1, _rect.v2);
+			DrawEnd();
+		}
 	}
 
 	glFlush();											// 그림이 다 그렸졌다는 걸 알려줌. 모든 명령어를 실행되게 함.
 	SwapBuffers(m_hDc);									// OpenGL이 완료한 그림을 새롭게 화면에 그린다 - 현재 buffer에 그려진 것과 Frame에 그려진 것을 swap(Double buffer), 그리기 함수에서 glFlush 대신 사용
+	Sleep(10);
 
-	m_arLine.RemoveAll();
+	DrawPnlDefNum();
+	//DrawPnlDefNum();
+	//m_arLine.RemoveAll();
 }
 
 void CSimpleOpengl::DrawClear()
@@ -767,7 +833,7 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 {
 	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
 
-	COLORREF color = RGB(255, 255, 255);
+	COLORREF color = RGB_WHITE;
 	int nWorldMargin = 6;	// [mm] = [dot]
 	int nWorldStX = 3;		// [mm] = [dot]
 
@@ -794,6 +860,7 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 	double dFrmSpace = 2.0;
 	double dDrawStPosX = 0.0;
 	
+	RemoveAllLine();
 	for (k = 0; k < nTotPnl; k++) // Draw Panel from Left to Right. 
 	{
 		stVertex v1, v2;
@@ -842,9 +909,9 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 			fData4 += dFrmMargin[3];									// bottom
 
 			if (k == nSelMarkingPnl || k == nSelMarkingPnl+1)
-				color = RGB(255, 0, 0);
+				color = RGB_RED;
 			else
-				color = RGB(255, 255, 255);
+				color = RGB_WHITE;
 
 			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
 			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
@@ -1027,7 +1094,6 @@ void CSimpleOpengl::DrawText(CString sText, CPoint ptPnt, COLORREF rgb)
 
 void CSimpleOpengl::EraseText(CRect rect)
 {
-	// Draw the text
 	CDC* pDC = m_pDc;
 	CBrush brush, *Oldbrush;
 	brush.CreateSolidBrush(RGB(0, 0, 0));
@@ -1072,8 +1138,8 @@ void CSimpleOpengl::DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 		return;
 	}
 
-	CRect rt;
 	CDC* pDC = m_pDc;
+	CRect rt;
 	int nDispPnlNum = -1;
 	int nDispPcrIdx = -1;
 	for (k = 0; k < nTotPnl; k++) // Index start from left
@@ -1086,6 +1152,7 @@ void CSimpleOpengl::DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 			nDispPnlNum = Pcr.GetSerial();
 			if (pEstimatedPnlNum[k] != nDispPnlNum)
 				AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
+			// Array for Disp PnlNum, PnlDefNum.
 			pPnlNum[k] = nDispPnlNum;
 			pPnlDefNum[k] = Pcr.GetTotalDef();
 		}
@@ -1125,18 +1192,134 @@ void CSimpleOpengl::DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 
 		if (nSelMarkingPnl + 1 == nTotPnl - (k + 1))
 		{
-			DrawText(sPnlDefNum, ptPnlDefPnt, RGB(255, 0, 0));
-			DrawText(sPnlNum, ptPnlPnt, RGB(255, 0, 0));
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB_RED);
+			DrawText(sPnlNum, ptPnlPnt, RGB_RED);
 		}
 		else if (nSelMarkingPnl == nTotPnl - (k + 1))
 		{
-			DrawText(sPnlDefNum, ptPnlDefPnt, RGB(255, 0, 0));
-			DrawText(sPnlNum, ptPnlPnt, RGB(255, 0, 0));
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB_RED);
+			DrawText(sPnlNum, ptPnlPnt, RGB_RED);
 		}
 		else
 		{
-			DrawText(sPnlDefNum, ptPnlDefPnt, RGB(255, 255, 255));
-			DrawText(sPnlNum, ptPnlPnt, RGB(255, 255, 255));
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB_WHITE);
+			DrawText(sPnlNum, ptPnlPnt, RGB_WHITE);
+		}
+	}
+
+	delete[] pEstimatedPnlNum;
+	delete[] pPnlNum;
+	delete[] pPnlDefNum;
+
+	m_nSerial = nSerial;
+	m_arPcr = &arPcr;
+	m_StrPcs = &StrPcs;
+}
+
+void CSimpleOpengl::DrawPnlDefNum()
+{
+	if (!m_arPcr || !m_StrPcs)
+		return;
+
+	int i, k;
+	CString sPnlDefNum, sPnlNum;
+
+	int nCount = m_arPcr->GetSize();
+
+	if (nCount < 1)
+		return;
+
+	int nTotPnl = 6;
+	int nSelMarkingPnl = 2; // Index start from right
+	int *pEstimatedPnlNum = new int[nTotPnl];
+	int *pPnlNum = new int[nTotPnl];
+	int *pPnlDefNum = new int[nTotPnl];
+	CPcr Pcr;
+	int nPcrIdx = -1;
+	for (i = 0; i < nCount; i++)
+	{
+		Pcr = m_arPcr->GetAt(i);
+		if (Pcr.GetSerial() == m_nSerial)
+		{
+			nPcrIdx = i;
+			break;
+		}
+	}
+	if (nPcrIdx < 0)
+	{
+		AfxMessageBox(_T("선택한 시리얼에 대한 PCR 정보가 없습니다."));
+		delete[] pEstimatedPnlNum;
+		delete[] pPnlNum;
+		delete[] pPnlDefNum;
+		return;
+	}
+
+	CDC* pDC = m_pDc;
+	CRect rt;
+	int nDispPnlNum = -1;
+	int nDispPcrIdx = -1;
+	for (k = 0; k < nTotPnl; k++) // Index start from left
+	{
+		pEstimatedPnlNum[k] = m_nSerial - (nTotPnl - (nSelMarkingPnl + k + 1));
+		nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + k + 1));
+		if (nDispPcrIdx >= 0)
+		{
+			Pcr = m_arPcr->GetAt(nDispPcrIdx);
+			nDispPnlNum = Pcr.GetSerial();
+			if (pEstimatedPnlNum[k] != nDispPnlNum)
+				AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
+			// Array for Disp PnlNum, PnlDefNum.
+			pPnlNum[k] = nDispPnlNum;
+			pPnlDefNum[k] = Pcr.GetTotalDef();
+		}
+		else
+		{
+			pPnlNum[k] = -1;
+			pPnlDefNum[k] = -1;
+		}
+
+		if (pPnlDefNum[k] < 0)
+		{
+			sPnlDefNum.Format(_T(""));
+			sPnlNum.Format(_T(""));
+		}
+		else
+		{
+			sPnlDefNum.Format(_T("Total: %d"), pPnlDefNum[k]);
+			sPnlNum.Format(_T("%d"), pPnlNum[k]);
+		}
+		CSize Extent = pDC->GetTextExtent(sPnlDefNum);
+		CPoint ptPnlDefLt, ptPnlDefRb, ptPnlDefPnt;
+		CPoint ptPnlLt, ptPnlRb, ptPnlPnt;
+		GetRngDrawPnl(k, (tagStrPcs&)*m_StrPcs, ptPnlLt, ptPnlRb);
+		ptPnlDefPnt.x = ptPnlLt.x + ((ptPnlRb.x - ptPnlLt.x) - Extent.cx) / 2;
+		ptPnlDefPnt.y = ptPnlLt.y - Extent.cy - LINE_SPACE;
+
+		Extent = pDC->GetTextExtent(sPnlNum);
+		ptPnlPnt.x = ptPnlLt.x + ((ptPnlRb.x - ptPnlLt.x) - Extent.cx) / 2;
+		ptPnlPnt.y = ptPnlRb.y + LINE_SPACE;
+
+		rt.left = ptPnlLt.x; rt.top = ptPnlDefPnt.y;
+		rt.right = ptPnlRb.x; rt.bottom = ptPnlDefPnt.y + Extent.cy;
+		EraseText(rt);
+		rt.left = ptPnlLt.x; rt.top = ptPnlPnt.y;
+		rt.right = ptPnlRb.x; rt.bottom = ptPnlRb.y + Extent.cy + LINE_SPACE;
+		EraseText(rt);
+
+		if (nSelMarkingPnl + 1 == nTotPnl - (k + 1))
+		{
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB_RED);
+			DrawText(sPnlNum, ptPnlPnt, RGB_RED);
+		}
+		else if (nSelMarkingPnl == nTotPnl - (k + 1))
+		{
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB_RED);
+			DrawText(sPnlNum, ptPnlPnt, RGB_RED);
+		}
+		else
+		{
+			DrawText(sPnlDefNum, ptPnlDefPnt, RGB_WHITE);
+			DrawText(sPnlNum, ptPnlPnt, RGB_WHITE);
 		}
 	}
 
@@ -1145,3 +1328,148 @@ void CSimpleOpengl::DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 	delete[] pPnlDefNum;
 }
 
+void CSimpleOpengl::DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
+{
+	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
+
+	int nCount = arPcr.GetSize();
+	if (nCount < 1)
+		return;
+
+	CRect rtDispCtrl;
+	::GetClientRect(m_hCtrl, &rtDispCtrl);
+	int nWorldMargin = 6;	// [mm] = [dot]
+	int nWorldStX = 3;		// [mm] = [dot]
+	int nWorldW = rtDispCtrl.right - rtDispCtrl.left - nWorldMargin;
+	int nWorldH = rtDispCtrl.bottom - rtDispCtrl.top;
+
+	int nTotPnl = 6;
+	int nSelMarkingPnl = 2; // Index start from right
+	int *pEstimatedPnlNum = new int[nTotPnl];
+	int *pPnlNum = new int[nTotPnl];
+	int *pPnlDefNum = new int[nTotPnl];
+	CPcr Pcr;
+	int nPcrIdx = -1 , nTotPcs = -1;
+
+	int i = 0, k = 0, nR = -1, nC = -1;
+	stVertex v1, v2;
+	double fWidth, fHeight;
+	double fData1, fData2, fData3, fData4;
+	double dPixelSize = 2.5; // [um/pixel]
+	double mmPxl = dPixelSize / 1000.0; // [mm]
+	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
+	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmSpace = 2.0;
+	double dDrawStPosX = 0.0;
+
+	for (i = 0; i < nCount; i++)
+	{
+		Pcr = arPcr.GetAt(i);
+		if (Pcr.GetSerial() == nSerial)
+		{
+			nPcrIdx = i;
+			break;
+		}
+	}
+	if (nPcrIdx < 0)
+	{
+		AfxMessageBox(_T("선택한 시리얼에 대한 PCR 정보가 없습니다."));
+		delete[] pEstimatedPnlNum;
+		delete[] pPnlNum;
+		delete[] pPnlDefNum;
+		return;
+	}
+
+	int nDispPnlNum = -1;
+	int nDispPcrIdx = -1;
+	RemoveAllRect();
+	for (k = 0; k < nTotPnl; k++) // Index start from left
+	{
+		pEstimatedPnlNum[k] = nSerial - (nTotPnl - (nSelMarkingPnl + k + 1));
+		nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + k + 1));
+
+		fData1 = (double)StrPcs.m_stFrameRgnPix[0].iStartX * mmPxl;	// left
+		fData2 = (double)StrPcs.m_stFrameRgnPix[0].iStartY * mmPxl;	// top
+		fData3 = (double)StrPcs.m_stFrameRgnPix[0].iEndX * mmPxl;	// right
+		fData4 = (double)StrPcs.m_stFrameRgnPix[0].iEndY * mmPxl;	// bottom
+		fWidth = (fData3 - fData1) + (dFrmMargin[0] + dFrmMargin[2]);
+		fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
+
+		fData1 += (double)nWorldStX;
+		fData1 += dFrmSpace * k;
+
+		int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);
+		if ((nWorldW - nRealW) < 0.0)
+		{
+			int nNeedX = nRealW - nWorldW;
+			dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
+			dFrmOffset[0] = 0.0;
+		}
+		else
+			dFrmOffset[0] = (nWorldW - fWidth*nTotPnl) / 2.0;
+
+		dDrawStPosX = fWidth * dScaleX * k;
+
+		if ((nWorldH - fHeight) < 0.0)
+		{
+			int nNeedY = fHeight - nWorldH;
+			dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
+			dFrmOffset[1] = 0.0;
+		}
+		else
+			dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+
+		if (nDispPcrIdx >= 0)
+		{
+			Pcr = arPcr[nDispPcrIdx];
+			nDispPnlNum = Pcr.GetSerial();
+			if (pEstimatedPnlNum[k] != nDispPnlNum)
+				AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
+
+			nTotPcs = Pcr.GetTotalDef();
+			for (i = 0; i < nTotPcs; i++)
+			{
+				int nPcsId = Pcr.GetPcsId(i);
+				int nDefCode = Pcr.GetDefCode(i);
+				double fNeed = 0.0;
+				pParent->GetMatrix(nPcsId, nR, nC);
+				fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
+				fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
+				fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
+				fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
+				fWidth = (fData3 - fData1) * dScaleX;
+				fHeight = (fData4 - fData2) * dScaleY;
+				fNeed = (fData3 - fData1) - fWidth;
+
+				fData1 += (double)nWorldStX;
+				fData1 += dFrmSpace * k;
+				fData1 += dFrmOffset[0];									// left
+				fData2 += dFrmOffset[1];									// top
+
+				fData1 += dDrawStPosX - (fNeed*(double)nC);					// left
+				fData1 += dFrmMargin[0] * dScaleX;							// left
+
+				fData3 = fData1 + fWidth;									// right
+				fData4 = fData2 + fHeight;									// bottom
+
+				v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+				v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+				AddRect(v1, v2, pParent->GetDefColor(nDefCode));			//m_rgbDef[nDefCode]);
+			}
+		}
+		else
+		{
+			pPnlNum[k] = -1;
+			pPnlDefNum[k] = -1;
+		}
+	}
+
+	m_nSerial = nSerial;
+	m_arPcr = &arPcr;
+	m_StrPcs = &StrPcs;
+
+	delete[] pEstimatedPnlNum;
+	delete[] pPnlNum;
+	delete[] pPnlDefNum;
+}

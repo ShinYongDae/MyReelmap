@@ -23,13 +23,72 @@ CSimpleReelmap::CSimpleReelmap(CString sPath, CWnd* pParent/*=NULL*/)
 	m_nMaxCol = 0;
 	m_nActionCode = 0;
 
-	//m_nCMstActionCode = 0;
-	//m_nCMstMaxRow = 0;
-	//m_nCMstMaxCol = 0;
-	//m_nCMstTotPcs = 0;
+	InitColor();
 
-	Free();
-	
+	m_cBigDef[0] = '*';		//	NONE
+	m_cBigDef[1] = 'N';		//	DEF_NICK
+	m_cBigDef[2] = 'D';		//	DEF_PROTRUSION
+	m_cBigDef[3] = 'A';		//	DEF_SPACE
+	m_cBigDef[4] = 'O';		//	DEF_OPEN
+	m_cBigDef[5] = 'S';		//	DEF_SHORT
+	m_cBigDef[6] = 'U';		//	DEF_USHORT
+	m_cBigDef[7] = 'I';		//	DEF_PINHOLE
+	m_cBigDef[8] = 'H';		//	DEF_HOLE_MISS
+	m_cBigDef[9] = 'E';		//	DEF_EXTRA
+	m_cBigDef[10] = 'P';	//	DEF_PAD
+	m_cBigDef[11] = 'L';	//	DEF_HOLE_POSITION
+	m_cBigDef[12] = 'X';	//	DEF_POI
+	m_cBigDef[13] = 'T';	//	DEF_VH_POSITION
+	m_cBigDef[14] = 'M';	//	DEF_VH_MISS
+	m_cBigDef[15] = 'F';	//	DEF_HOLE_DEFECT		'F'
+	m_cBigDef[16] = 'C';	//	DEF_HOLE_OPEN
+	m_cBigDef[17] = 'G';	//	DEF_VH_OPEN
+	m_cBigDef[18] = 'V';	//	DEF_VH_DEF
+	m_cBigDef[19] = 'K';	//	DEF_EDGE_NICK
+	m_cBigDef[20] = 'R';	//	DEF_EDGE_PROT
+	m_cBigDef[21] = 'B';	//	DEF_EDGE_SPACE
+	m_cBigDef[22] = 'J';	//	DEF_USER_DEFINE_1
+	m_cBigDef[23] = 'Q';	//	DEF_NARROW
+	m_cBigDef[24] = 'W';	//	DEF_WIDE
+	m_cBigDef[25] = 'F';	//	DEF_FIXED_DEF		'F'
+	m_cBigDef[26] = 'Y';	//	DEF_VH_SIZE
+	m_cBigDef[27] = 'Z';	//	DEF_VH_EDGE
+	m_cBigDef[28] = '?';	//	DEF_LIGHT
+	m_cBigDef[29] = '@';	//	DEF_INNER
+
+	m_cSmallDef[0] = '*';	//	NONE
+	m_cSmallDef[1] = 'n';	//	DEF_NICK
+	m_cSmallDef[2] = 'd';	//	DEF_PROTRUSION
+	m_cSmallDef[3] = 'a';	//	DEF_SPACE
+	m_cSmallDef[4] = 'o';	//	DEF_OPEN
+	m_cSmallDef[5] = 's';	//	DEF_SHORT
+	m_cSmallDef[6] = 'u';	//	DEF_USHORT
+	m_cSmallDef[7] = 'i';	//	DEF_PINHOLE
+	m_cSmallDef[8] = 'h';	//	DEF_HOLE_MISS
+	m_cSmallDef[9] = 'e';	//	DEF_EXTRA
+	m_cSmallDef[10] = 'p';	//	DEF_PAD
+	m_cSmallDef[11] = 'l';	//	DEF_HOLE_POSITION
+	m_cSmallDef[12] = 'x';	//	DEF_POI
+	m_cSmallDef[13] = 't';	//	DEF_VH_POSITION
+	m_cSmallDef[14] = 'm';	//	DEF_VH_MISS
+	m_cSmallDef[15] = 'f';	//	DEF_HOLE_DEFECT		'f'
+	m_cSmallDef[16] = 'c';	//	DEF_HOLE_OPEN
+	m_cSmallDef[17] = 'g';	//	DEF_VH_OPEN
+	m_cSmallDef[18] = 'v';	//	DEF_VH_DEF
+	m_cSmallDef[19] = 'k';	//	DEF_EDGE_NICK
+	m_cSmallDef[20] = 'r';	//	DEF_EDGE_PROT
+	m_cSmallDef[21] = 'b';	//	DEF_EDGE_SPACE
+	m_cSmallDef[22] = 'j';	//	DEF_USER_DEFINE_1
+	m_cSmallDef[23] = 'q';	//	DEF_NARROW
+	m_cSmallDef[24] = 'w';	//	DEF_WIDE
+	m_cSmallDef[25] = 'f';	//	DEF_FIXED_DEF		'f'
+	m_cSmallDef[26] = 'y';	//	DEF_VH_SIZE
+	m_cSmallDef[27] = 'z';	//	DEF_VH_EDGE
+	m_cSmallDef[28] = '?';	//	DEF_LIGHT
+	m_cSmallDef[29] = '@';	//	DEF_INNER
+
+	LoadDefectTableIni();
+	Free();	
 	CreateWndForm(WS_CHILD | WS_OVERLAPPED);
 	ThreadStart();
 }
@@ -202,6 +261,40 @@ BOOL CSimpleReelmap::IsShare(int &nSerial)
 	}
 
 	return FALSE;
+}
+
+void CSimpleReelmap::InitColor()
+{
+	m_rgbDef[DEF_NONE] = (RGB_WHITE);						// 0=ºÒ·®¾øÀ½
+	m_rgbDef[DEF_NICK] = (RGB_MAGENTA);					// 1=°á¼Õ
+	m_rgbDef[DEF_PROTRUSION] = (RGB_SKYBLUE);				// 2=µ¹±â
+	m_rgbDef[DEF_SPACE] = (RGB_LTGREEN);					// 3=¼±°£Æø
+	m_rgbDef[DEF_OPEN] = (RGB_LTRED);						// 4=¿ÀÇÂ
+	m_rgbDef[DEF_SHORT] = (RGB_RED);						// 5=¼îÆ®
+	m_rgbDef[DEF_USHORT] = (RGB_LTCYAN);					// 6=u¼îÆ®
+	m_rgbDef[DEF_PINHOLE] = (RGB_LLTGREEN);				// 7=ÇÉÈ¦
+	m_rgbDef[DEF_HOLE_MISS] = (RGB_LTBLUE);				// 8=È¦¾øÀ½
+	m_rgbDef[DEF_EXTRA] = (RGB_CLOUDBLUE);				// 9=ÀÜµ¿
+	m_rgbDef[DEF_PAD] = (RGB_LTPURPLE);					// 10=ÆÐµå
+	m_rgbDef[DEF_HOLE_POSITION] = (RGB_PINK);			// 11=È¦Æí½É
+	m_rgbDef[DEF_POI] = (RGB_LTMAGENTA);					// 12=POI
+	m_rgbDef[DEF_VH_POSITION] = (RGB_LTYELLOW);			// 13=VHÆí½É
+	m_rgbDef[DEF_VH_MISS] = (RGB_BOON);					// 14=VH¾øÀ½
+	m_rgbDef[DEF_HOLE_DEFECT] = (RGB_LTPINK);				// 15=È¦ºÒ·®
+	m_rgbDef[DEF_HOLE_OPEN] = (RGB_LTGREEN);				// 16=È¦¿ÀÇÂ
+	m_rgbDef[DEF_VH_OPEN] = (RGB_LT_DARKMAGENTA);			// 17=VH¿ÀÇÂ
+	m_rgbDef[DEF_VH_DEF] = (RGB_ORANGE);					// 18=VH°áÇÔ
+	m_rgbDef[DEF_EDGE_NICK] = (RGB_MUSTARD);			// 19 = E.°á¼Õ
+	m_rgbDef[DEF_EDGE_PROT] = (RGB_SKY);				// 20 = E.µ¹±â
+	m_rgbDef[DEF_EDGE_SPACE] = (RGB_LT_BROWN);			// 21 = E.¼±°£Æø
+	m_rgbDef[DEF_USER_DEFINE_1] = (RGB_PEACOCK_GREEN);	// 22 = UDD1
+	m_rgbDef[DEF_NARROW] = (RGB_PURPLE);				// 23 = Narrow
+	m_rgbDef[DEF_WIDE] = (RGB_FOREST_GREEN);			// 24 = Wide
+	m_rgbDef[DEF_FIXED_DEF] = (RGB_RED);				// 25 = °íÁ¤ºÒ·®
+	m_rgbDef[DEF_VH_SIZE] = (RGB_PURPLE);				// 26 = VHÅ©±â
+	m_rgbDef[DEF_VH_EDGE] = (RGB_EVER_GREEN);			// 27 = VH¿¡Áö°áÇÔ
+	m_rgbDef[DEF_LIGHT] = (RGB_YELLOW);					// 28 = ³ë±¤ºÒ·®
+	m_rgbDef[DEF_INNER] = (RGB_PCS_OUT);				// 29 = ³»ÃþºÒ·®
 }
 
 BOOL CSimpleReelmap::ShiftToBuffer(int nSerial)
@@ -525,6 +618,56 @@ BOOL CSimpleReelmap::Load()
 	return TRUE;
 }
 
+BOOL CSimpleReelmap::LoadDefectTableIni()
+{
+	TCHAR szData[200];
+	TCHAR sep[] = { _T(",;\r\n\t") };
+	CString sIdx, sVal;
+	int k;
+
+	for (k = 1; k < MAX_DEF; k++)
+	{
+		sIdx.Format(_T("%d"), k);
+		if (0 < ::GetPrivateProfileString(_T("DEFECT"), sIdx, NULL, szData, sizeof(szData), PATH_CONFIG))
+		{
+			sVal = _tcstok(szData, sep);
+			m_sEngDef[k].Format(_T("%s"), sVal);
+			sVal = _tcstok(NULL, sep);
+			m_sKorDef[k].Format(_T("%s"), sVal);
+			sVal = _tcstok(NULL, sep);
+			m_cBigDef[k] = sVal.GetAt(0);
+			sVal = _tcstok(NULL, sep);
+			m_cSmallDef[k] = sVal.GetAt(0);
+			sVal = _tcstok(NULL, sep);
+			m_rgbDef[k] = (COLORREF)_tstoi(sVal);
+			sVal = _tcstok(NULL, sep);
+			m_nOdr[k] = _tstoi(sVal);
+		}
+		else
+		{
+			AfxMessageBox(_T("Error - LoadDefectTableIni()"));
+			return FALSE;
+		}
+	}
+
+	if (0 < ::GetPrivateProfileString(_T("REELMAP"), _T("BackGround"), NULL, szData, sizeof(szData), PATH_CONFIG))
+	{
+		sVal = _tcstok(szData, sep);
+		m_nBkColor[0] = _tstoi(sVal);
+		sVal = _tcstok(NULL, sep);
+		m_nBkColor[1] = _tstoi(sVal);
+		sVal = _tcstok(NULL, sep);
+		m_nBkColor[2] = _tstoi(sVal);
+	}
+	else
+	{
+		AfxMessageBox(_T("Error - LoadBackGroundColor."));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 BOOL CSimpleReelmap::GetMatrix(int nPcsId, int &nR, int &nC)
 {
 	int nNodeX = m_nMaxCol;
@@ -689,4 +832,9 @@ CString CSimpleReelmap::CharToString(const char *szStr)
 CArPcr& CSimpleReelmap::GetAddrArPcr()
 {
 	return m_arPcr[0];
+}
+
+COLORREF CSimpleReelmap::GetDefColor(int nDefCode)
+{
+	return m_rgbDef[nDefCode];
 }
