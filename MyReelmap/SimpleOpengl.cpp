@@ -1146,7 +1146,7 @@ void CSimpleOpengl::DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 	{
 		pEstimatedPnlNum[k] = nSerial - (nTotPnl - (nSelMarkingPnl + k + 1));
 		nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + k + 1));
-		if (nDispPcrIdx >= 0)
+		if (nDispPcrIdx >= 0 && nDispPcrIdx < nCount)
 		{
 			Pcr = arPcr[nDispPcrIdx];
 			nDispPnlNum = Pcr.GetSerial();
@@ -1262,7 +1262,7 @@ void CSimpleOpengl::DrawPnlDefNum()
 	{
 		pEstimatedPnlNum[k] = m_nSerial - (nTotPnl - (nSelMarkingPnl + k + 1));
 		nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + k + 1));
-		if (nDispPcrIdx >= 0)
+		if (nDispPcrIdx >= 0 && nDispPcrIdx < nCount)
 		{
 			Pcr = m_arPcr->GetAt(nDispPcrIdx);
 			nDispPnlNum = Pcr.GetSerial();
@@ -1422,40 +1422,43 @@ void CSimpleOpengl::DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 
 		if (nDispPcrIdx >= 0)
 		{
-			Pcr = arPcr[nDispPcrIdx];
-			nDispPnlNum = Pcr.GetSerial();
-			if (pEstimatedPnlNum[k] != nDispPnlNum)
-				AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
-
-			nTotPcs = Pcr.GetTotalDef();
-			for (i = 0; i < nTotPcs; i++)
+			if (nDispPcrIdx < nCount)
 			{
-				int nPcsId = Pcr.GetPcsId(i);
-				int nDefCode = Pcr.GetDefCode(i);
-				double fNeed = 0.0;
-				pParent->GetMatrix(nPcsId, nR, nC);
-				fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
-				fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
-				fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
-				fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
-				fWidth = (fData3 - fData1) * dScaleX;
-				fHeight = (fData4 - fData2) * dScaleY;
-				fNeed = (fData3 - fData1) - fWidth;
+				Pcr = arPcr[nDispPcrIdx];
+				nDispPnlNum = Pcr.GetSerial();
+				if (pEstimatedPnlNum[k] != nDispPnlNum)
+					AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
 
-				fData1 += (double)nWorldStX;
-				fData1 += dFrmSpace * k;
-				fData1 += dFrmOffset[0];									// left
-				fData2 += dFrmOffset[1];									// top
+				nTotPcs = Pcr.GetTotalDef();
+				for (i = 0; i < nTotPcs; i++)
+				{
+					int nPcsId = Pcr.GetPcsId(i);
+					int nDefCode = Pcr.GetDefCode(i);
+					double fNeed = 0.0;
+					pParent->GetMatrix(nPcsId, nR, nC);
+					fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
+					fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
+					fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
+					fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
+					fWidth = (fData3 - fData1) * dScaleX;
+					fHeight = (fData4 - fData2) * dScaleY;
+					fNeed = (fData3 - fData1) - fWidth;
 
-				fData1 += dDrawStPosX - (fNeed*(double)nC);					// left
-				fData1 += dFrmMargin[0] * dScaleX;							// left
+					fData1 += (double)nWorldStX;
+					fData1 += dFrmSpace * k;
+					fData1 += dFrmOffset[0];									// left
+					fData2 += dFrmOffset[1];									// top
 
-				fData3 = fData1 + fWidth;									// right
-				fData4 = fData2 + fHeight;									// bottom
+					fData1 += dDrawStPosX - (fNeed*(double)nC);					// left
+					fData1 += dFrmMargin[0] * dScaleX;							// left
 
-				v1.x = fData1; v1.y = fData2; v1.z = 0.0;
-				v2.x = fData3; v2.y = fData4; v2.z = 0.0;
-				AddRect(v1, v2, pParent->GetDefColor(nDefCode));			//m_rgbDef[nDefCode]);
+					fData3 = fData1 + fWidth;									// right
+					fData4 = fData2 + fHeight;									// bottom
+
+					v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+					v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+					AddRect(v1, v2, pParent->GetDefColor(nDefCode));			//m_rgbDef[nDefCode]);
+				}
 			}
 		}
 		else
