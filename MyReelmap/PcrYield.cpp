@@ -16,14 +16,14 @@ CPcrYield::CPcrYield()
 	m_nMaxRow = 0;
 	m_nMaxCol = 0;
 
-	for (int i = 0; i < MAX_STRIP; i++)
+	for (int j = 0; j < MAX_STRIP; j++)
 	{
-		m_nStripOut[i] = 0;
-		m_nDefStrip[i] = 0;
+		m_nStripOut[j] = 0;
+		m_nDefStrip[j] = 0;
 		for (int k = 0; k < MAX_DEF; k++)
 		{
-			if(!i) m_nDef[k] = 0;
-			m_nStripDef[i][k] = 0;
+			if(!j) m_nDef[k] = 0;
+			m_nStripDef[j][k] = 0;
 		}
 	}
 }
@@ -41,10 +41,10 @@ void CPcrYield::Init(int nSerial, CPcr& Pcr, int nMaxRow, int nMaxCol, double dS
 	m_nMaxRow = nMaxRow;
 	m_nMaxCol = nMaxCol;
 
-	LoadYield(Pcr, pPrevPcrYield);
+	Load(Pcr, pPrevPcrYield);
 }
 
-BOOL CPcrYield::LoadYield(CPcr& Pcr, CPcrYield* pPrevPcrYield)
+BOOL CPcrYield::Load(CPcr& Pcr, CPcrYield* pPrevPcrYield)
 {
 	CSimpleReelmap* pParnet = (CSimpleReelmap*)m_pParent;
 
@@ -56,14 +56,14 @@ BOOL CPcrYield::LoadYield(CPcr& Pcr, CPcrYield* pPrevPcrYield)
 	nDefStrip[0] = 0; nDefStrip[1] = 0; nDefStrip[2] = 0; nDefStrip[3] = 0;
 	nStripOut[0] = 0; nStripOut[1] = 0; nStripOut[2] = 0; nStripOut[3] = 0;
 
-	int i, k, nRow, nCol;
+	int i, j, k, nRow, nCol;
 	for (k = 0; k < MAX_DEF; k++)
 	{
 		nDef[k] = 0;
 
-		for (i = 0; i < MAX_STRIP; i++)
+		for (j = 0; j < MAX_STRIP; j++)
 		{
-			nStripDef[i][k] = 0;
+			nStripDef[j][k] = 0;
 		}
 	}
 
@@ -108,28 +108,28 @@ BOOL CPcrYield::LoadYield(CPcr& Pcr, CPcrYield* pPrevPcrYield)
 	}
 
 	int nTotStriptOut = 0;
-	for (k = 0; k < MAX_STRIP; k++)
+	for (j = 0; j < MAX_STRIP; j++)
 	{
 		if (pPrevPcrYield)
 		{
-			m_nDefStrip[k] = pPrevPcrYield->GetStripTotalBad(k) + nDefStrip[k];
-			m_nStripOut[k] = pPrevPcrYield->GetStripOut(k) + nStripOut[k];
-			nTotStriptOut += nStripOut[k];
-			for (i = 1; i < MAX_DEF; i++)
+			m_nDefStrip[j] = pPrevPcrYield->GetStripTotalBad(j) + nDefStrip[j];
+			m_nStripOut[j] = pPrevPcrYield->GetStripOut(j) + nStripOut[j];
+			nTotStriptOut += nStripOut[j];
+			for (k = 1; k < MAX_DEF; k++)
 			{
-				if (!k) m_nDef[i] = pPrevPcrYield->GetDefNum(i) + nDef[i];
-				m_nStripDef[k][i] = pPrevPcrYield->GetStripDefNum(k, i) + nStripDef[k][i];
+				if (!j) m_nDef[k] = pPrevPcrYield->GetDefNum(k) + nDef[k];
+				m_nStripDef[j][k] = pPrevPcrYield->GetStripDefNum(j, k) + nStripDef[j][k];
 			}
 		}
 		else
 		{
-			m_nDefStrip[k] = nDefStrip[k];
-			m_nStripOut[k] = nStripOut[k];
-			nTotStriptOut += nStripOut[k];
-			for (i = 1; i < MAX_DEF; i++)
+			m_nDefStrip[j] = nDefStrip[j];
+			m_nStripOut[j] = nStripOut[j];
+			nTotStriptOut += nStripOut[j];
+			for (k = 1; k < MAX_DEF; k++)
 			{
-				if (!k) m_nDef[i] = nDef[i];
-				m_nStripDef[k][i] = nStripDef[k][i];
+				if (!j) m_nDef[k] = nDef[k];
+				m_nStripDef[j][k] = nStripDef[j][k];
 			}
 		}
 	}

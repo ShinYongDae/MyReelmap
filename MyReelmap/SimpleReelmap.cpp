@@ -515,9 +515,9 @@ CString CSimpleReelmap::GetTextArPcrYield(int nIdx) // nIdx : Up(0), Dn(1)
 		dStripDefRatio[1] = (double)nStripTotDef[1] / (double)nStripTotPcs;
 		dStripDefRatio[2] = (double)nStripTotDef[2] / (double)nStripTotPcs;
 		dStripDefRatio[3] = (double)nStripTotDef[3] / (double)nStripTotPcs;
-		sTemp.Format(_T("A열[%%] : %.1f\tB열[%%] : %.1f\r\n"), 100.0 - dStripDefRatio[0], 100.0 - dStripDefRatio[1]);
+		sTemp.Format(_T("A열[%%] : %.1f\tB열[%%] : %.1f\r\n"), 100.0 * (1.0 - dStripDefRatio[0]), 100.0 * (1.0 - dStripDefRatio[1]));
 		sData += sTemp;
-		sTemp.Format(_T("C열[%%] : %.1f\tD열[%%] : %.1f\r\n"), 100.0 - dStripDefRatio[2], 100.0 - dStripDefRatio[3]);
+		sTemp.Format(_T("C열[%%] : %.1f\tD열[%%] : %.1f\r\n"), 100.0 *(1.0 - dStripDefRatio[2]), 100.0 * (1.0 - dStripDefRatio[3]));
 		sData += sTemp;
 
 		int nDef[MAX_DEF];
@@ -682,24 +682,24 @@ BOOL CSimpleReelmap::SaveYield()
 		cfile.Write(&nBad, sizeof(int));
 		cfile.Write(&nTotStripOut, sizeof(int));
 
-		for (k = 0; k < MAX_STRIP; k++)
+		for (j = 0; j < MAX_STRIP; j++)
 		{
-			nStripOut[k] = PcrYield.GetStripOut(k);
-			nDefStrip[k] = PcrYield.GetStripTotalBad(k);
-			cfile.Write(&nStripOut[k], sizeof(int));
-			cfile.Write(&nDefStrip[k], sizeof(int));
+			nStripOut[j] = PcrYield.GetStripOut(j);
+			nDefStrip[j] = PcrYield.GetStripTotalBad(j);
+			cfile.Write(&nStripOut[j], sizeof(int));
+			cfile.Write(&nDefStrip[j], sizeof(int));
 		}
 		int nStripDef[MAX_STRIP][MAX_DEF];
 		int nDef[MAX_DEF];
+		for (k = 0; k < MAX_DEF; k++)
+		{
+			nDef[k] = PcrYield.GetDefNum(k);
+			cfile.Write(&nDef[k], sizeof(int));
+		}
 		for (j = 0; j < MAX_STRIP; j++)
 		{
 			for (k = 0; k < MAX_DEF; k++)
 			{
-				if (!j)
-				{
-					nDef[k] = PcrYield.GetDefNum(k);
-					cfile.Write(&nDef[k], sizeof(int));
-				}
 				nStripDef[j][k] = PcrYield.GetStripDefNum(j, k);
 				cfile.Write(&nStripDef[j][k], sizeof(int));
 			}
@@ -848,15 +848,15 @@ BOOL CSimpleReelmap::LoadYield()
 
 		int nStripDef[MAX_STRIP][MAX_DEF];
 		int nDef[MAX_DEF];
+		for (k = 0; k < MAX_DEF; k++)
+		{
+			cfile.Read((void *)&nDef[k], sizeof(int));
+			PcrYield.SetDefNum(k, nDef[k]);
+		}
 		for (j = 0; j < MAX_STRIP; j++)
 		{
 			for (k = 0; k < MAX_DEF; k++)
 			{
-				if (!j)
-				{
-					cfile.Read((void *)&nDef[k], sizeof(int));
-					PcrYield.SetDefNum(j, nDef[k]);
-				}
 				cfile.Read((void *)&nStripDef[j][k], sizeof(int));
 				PcrYield.SetStripDefNum(j, k, nStripDef[j][k]);
 			}

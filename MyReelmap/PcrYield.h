@@ -27,7 +27,7 @@ class CPcrYield
 	int m_nDefStrip[MAX_STRIP];
 	int m_nStripDef[MAX_STRIP][MAX_DEF];
 
-	BOOL LoadYield(CPcr& Pcr, CPcrYield* pPrevPcrYield = NULL);
+	BOOL Load(CPcr& Pcr, CPcrYield* pPrevPcrYield = NULL);
 	char GetCodeBigDef(int nIdx);
 	char GetCodeSmallDef(int nIdx);
 

@@ -70,6 +70,8 @@ BEGIN_MESSAGE_MAP(CMyReelmapDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON1, &CMyReelmapDlg::OnBnClickedButton1)
 	ON_BN_CLICKED(IDC_BUTTON2, &CMyReelmapDlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BUTTON3, &CMyReelmapDlg::OnBnClickedButton3)
+	ON_BN_CLICKED(IDC_BUTTON4, &CMyReelmapDlg::OnBnClickedButton4)
+	ON_BN_CLICKED(IDC_BUTTON5, &CMyReelmapDlg::OnBnClickedButton5)
 END_MESSAGE_MAP()
 
 
@@ -255,4 +257,16 @@ void CMyReelmapDlg::DrawPnlDef(int nSerial)
 {
 	m_pOpengl->DrawPnlDef(nSerial, GetAddrArPcr(), GetAddrStrPcs());
 	m_pOpengl->SetDraw();
+}
+
+
+void CMyReelmapDlg::OnBnClickedButton4()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+
+void CMyReelmapDlg::OnBnClickedButton5()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 }
