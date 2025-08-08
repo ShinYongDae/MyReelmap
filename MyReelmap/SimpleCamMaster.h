@@ -12,8 +12,9 @@
 #ifndef MAX_STRIP
 #define MAX_STRIP	4
 #endif
-
+#ifndef MAX_DEF
 #define MAX_DEF						30
+#endif
 #define DEF_NONE					0		// NONE 	
 #define DEF_NICK					1		// Nick 	
 #define DEF_PROTRUSION				2		// Excessive line width

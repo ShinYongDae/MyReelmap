@@ -27,7 +27,7 @@ void CPcr::Free()
 
 void CPcr::Init(int nSerial, CString sPathFolder)
 {
-	m_sPathFolder = sPathFolder;
+	m_sPathFolderShare = sPathFolder;
 	m_nSerial = nSerial;
 	m_oleDate = COleDateTime::GetCurrentTime();
 	m_pDefPcs = NULL;
@@ -44,8 +44,8 @@ BOOL CPcr::LoadPcr()
 	int nFileSize, nRSize;
 	CString sPath, sFileData;
 
-	m_sPathFolder = PATH_SHARE;
-	sPath.Format(_T("%s\\%04d.pcr"), m_sPathFolder, m_nSerial);
+	m_sPathFolderShare = PATH_SHARE;
+	sPath.Format(_T("%s\\%04d.pcr"), m_sPathFolderShare, m_nSerial);
 	StringToChar(sPath, FileD);
 	if ((fp = fopen(FileD, "r")) != NULL)
 	{

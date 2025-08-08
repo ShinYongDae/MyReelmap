@@ -185,6 +185,7 @@
     <ClInclude Include="MyReelmap.h" />
     <ClInclude Include="MyReelmapDlg.h" />
     <ClInclude Include="Pcr.h" />
+    <ClInclude Include="PcrYield.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SimpleCamMaster.h" />
     <ClInclude Include="SimpleOpengl.h" />
@@ -196,6 +197,7 @@
     <ClCompile Include="MyReelmap.cpp" />
     <ClCompile Include="MyReelmapDlg.cpp" />
     <ClCompile Include="Pcr.cpp" />
+    <ClCompile Include="PcrYield.cpp" />
     <ClCompile Include="SimpleCamMaster.cpp" />
     <ClCompile Include="SimpleOpengl.cpp" />
     <ClCompile Include="SimpleReelmap.cpp" />

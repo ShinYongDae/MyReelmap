@@ -11,12 +11,13 @@
 
 IMPLEMENT_DYNAMIC(CSimpleReelmap, CWnd)
 
-CSimpleReelmap::CSimpleReelmap(CString sPath, CWnd* pParent/*=NULL*/)
+CSimpleReelmap::CSimpleReelmap(CString sPathRmap, CString sPathYield, CWnd* pParent/*=NULL*/)
 {
 	m_pParent = pParent;
 	if (pParent)
 		m_hParent = pParent->GetSafeHwnd();
-	m_sPath = sPath;
+	m_sPathRmap = sPathRmap;
+	m_sPathYield = sPathYield;
 
 	m_bLock = FALSE;
 	m_nMaxRow = 0;
@@ -128,6 +129,14 @@ void CSimpleReelmap::Free()
 		}
 		m_arPcr[1].RemoveAll();
 	}
+
+	nCount = m_arPcrYield[0].GetSize();
+	if (nCount > 0)
+		m_arPcrYield[0].RemoveAll();
+
+	nCount = m_arPcrYield[1].GetSize();
+	if (nCount > 0)
+		m_arPcrYield[1].RemoveAll();
 }
 
 BEGIN_MESSAGE_MAP(CSimpleReelmap, CWnd)
@@ -168,9 +177,6 @@ BOOL CSimpleReelmap::ProcReelmap()
 	{
 		m_bLock = TRUE;
 		Add(nSerial);
-		//CPcr Pcr;
-		//Pcr.Init(nSerial);
-		//m_arPcr[0].Add(Pcr);
 		ShiftToBuffer(nSerial);
 		m_bLock = FALSE;
 	}
@@ -390,7 +396,7 @@ BOOL CSimpleReelmap::DelPcr(CString sPath)
 	return TRUE; // Sucess.
 }
 
-CString CSimpleReelmap::GetTextArPcr(int nIdx)
+CString CSimpleReelmap::GetTextArPcr(int nIdx) // nIdx : Up(0), Dn(1)
 {
 	int nNodeX = m_nMaxCol;
 	int nNodeY = m_nMaxRow;
@@ -455,12 +461,90 @@ CString CSimpleReelmap::GetTextArPcr(int nIdx)
 	return sData;
 }
 
+CString CSimpleReelmap::GetTextArPcrYield(int nIdx) // nIdx : Up(0), Dn(1)
+{
+	int nNodeX = m_nMaxCol;
+	int nNodeY = m_nMaxRow;
+	int nStripY = nNodeY / MAX_STRIP;	
+
+	CString sData = _T("");
+	CString sTemp, sVal;
+	int i, j, k;
+
+	int nCount = m_arPcr[nIdx].GetSize();
+	CPcrYield PcrYield;
+	for (i = 0; i < nCount; i++)
+	{
+		if (i)	sData += _T("\r\n");
+		PcrYield = m_arPcrYield[nIdx].GetAt(i);
+		int nSerial = PcrYield.GetSerial();
+		COleDateTime time = PcrYield.GetDateTime();
+		sTemp.Format(_T("%d\r\n%s\r\n"), nSerial, time.Format(_T("%Y/%m/%d %H:%M:%S")));
+		sData += sTemp;
+
+		int nTotPcs = PcrYield.GetTotalPcs();
+		int nTotGood = PcrYield.GetTotalGood();
+		int nTotBad = PcrYield.GetTotalBad();
+		int nStripTotPcs = nTotPcs / MAX_STRIP;
+		sTemp.Format(_T("Total Pcs : %d\r\n"), nTotPcs);
+		sData += sTemp;
+		sTemp.Format(_T("Total Good : %d\tTotal Bad : %d\r\n"), nTotGood, nTotBad);
+		sData += sTemp;
+
+		int nTotStriptOut = PcrYield.GetTotalStripOut();
+		int nStripOut[MAX_STRIP], nStripDef[MAX_STRIP][MAX_DEF], nStripTotDef[MAX_STRIP];
+		double dStripDefRatio[MAX_STRIP];
+		for (j = 0; j < MAX_STRIP; j++)
+		{
+			nStripOut[j] = PcrYield.GetStripOut(j);
+			nStripTotDef[j] = 0;
+			for (k = 1; k < MAX_DEF; k++)
+			{
+				nStripDef[j][k] = PcrYield.GetStripDefNum(j, k);
+				nStripTotDef[j] += nStripDef[j][k];
+			}
+		}
+		sTemp.Format(_T("Total StripOut : %d\r\n"), nTotStriptOut);
+		sData += sTemp;
+		sTemp.Format(_T("A-StripOut : %d\tB-StripOut : %d\r\n"), nStripOut[0], nStripOut[1]);
+		sData += sTemp;
+		sTemp.Format(_T("C-StripOut : %d\tD-StripOut : %d\r\n"), nStripOut[2], nStripOut[3]);
+		sData += sTemp;
+
+		dStripDefRatio[0] = (double)nStripTotDef[0] / (double)nStripTotPcs;
+		dStripDefRatio[1] = (double)nStripTotDef[1] / (double)nStripTotPcs;
+		dStripDefRatio[2] = (double)nStripTotDef[2] / (double)nStripTotPcs;
+		dStripDefRatio[3] = (double)nStripTotDef[3] / (double)nStripTotPcs;
+		sTemp.Format(_T("A열[%%] : %.1f\tB열[%%] : %.1f\r\n"), 100.0 - dStripDefRatio[0], 100.0 - dStripDefRatio[1]);
+		sData += sTemp;
+		sTemp.Format(_T("C열[%%] : %.1f\tD열[%%] : %.1f\r\n"), 100.0 - dStripDefRatio[2], 100.0 - dStripDefRatio[3]);
+		sData += sTemp;
+
+		int nDef[MAX_DEF];
+		for (k = 1; k < MAX_DEF; k++)
+		{
+			nDef[k] = PcrYield.GetDefNum(k);
+			if (!(k % 3))
+				sTemp.Format(_T("%c(%d)\r\n"), GetCodeBigDef(k), nDef[k]);
+			else if (k == MAX_DEF - 1)
+				sTemp.Format(_T("%c(%d)\r\n"), GetCodeBigDef(k), nDef[k]);
+			else
+				sTemp.Format(_T("%c(%d)\t"), GetCodeBigDef(k), nDef[k]);
+			sData += sTemp;
+		}
+	}
+
+	return sData;
+}
+
 BOOL CSimpleReelmap::Add(int nSerial)
 {
 	int i;
 	BOOL bAdd = FALSE;
 	CPcr Pcr[2];
-	Pcr[0].Init(nSerial);
+	Pcr[0].Init(nSerial); // LoadPcr()
+	CPcrYield PcrYield[2];
+
 	int nCount = m_arPcr[0].GetSize();
 	for (i = 0; i < nCount; i++)
 	{
@@ -469,22 +553,54 @@ BOOL CSimpleReelmap::Add(int nSerial)
 		{
 			Pcr[1].Free();
 			m_arPcr[0].SetAt(i, Pcr[0]); // 인덱스(i)에 값 Pcr[0] 입력
+
+			if (i > 0)
+			{
+				PcrYield[1] = m_arPcrYield[0].GetAt(i-1);				// PrevPcrYield
+				PcrYield[0].Init(nSerial, Pcr[0], m_nMaxRow, m_nMaxCol, 20.0, this, &PcrYield[1]);	// UpdatePcrYield()
+			}
+			else
+				PcrYield[0].Init(nSerial, Pcr[0], m_nMaxRow, m_nMaxCol, 20.0, this);				// UpdatePcrYield()
+
+			m_arPcrYield[0].SetAt(i, PcrYield[0]); // 인덱스(i)에 값 PcrYield[0] 입력
+
 			bAdd = TRUE;
 			break;
 		}
 	}
-	if(!bAdd)
+	if (!bAdd)
+	{
 		m_arPcr[0].Add(Pcr[0]);
+
+		nCount = m_arPcrYield[0].GetSize();
+		if (nCount > 0)
+		{
+			PcrYield[1] = m_arPcrYield[0].GetAt(nCount - 1);									// PrevPcrYield
+			PcrYield[0].Init(nSerial, Pcr[0], m_nMaxRow, m_nMaxCol, 20.0, this, &PcrYield[1]);	// UpdatePcrYield()
+		}
+		else
+			PcrYield[0].Init(nSerial, Pcr[0], m_nMaxRow, m_nMaxCol, 20.0, this);				// UpdatePcrYield()
+		m_arPcrYield[0].Add(PcrYield[0]);
+	}
 
 	return TRUE;
 }
 
 BOOL CSimpleReelmap::Save()
 {
+	BOOL bRtn[2] = { 0, 0 };
+	bRtn[0] = SaveRmap();
+	bRtn[1] = SaveYield();
+
+	return (bRtn[0] && bRtn[1]);
+}
+
+BOOL CSimpleReelmap::SaveRmap()
+{
 	CFile cfile;
-	if (!cfile.Open(m_sPath, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary | CFile::shareDenyNone, NULL))
+	if (!cfile.Open(m_sPathRmap, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary | CFile::shareDenyNone, NULL))
 	{
-		AfxMessageBox(_T("Fail to save."));
+		AfxMessageBox(_T("Fail to save Reelmap."));
 		return FALSE;
 	}
 
@@ -535,25 +651,93 @@ BOOL CSimpleReelmap::Save()
 	return TRUE;
 }
 
+BOOL CSimpleReelmap::SaveYield()
+{
+	CFile cfile;
+	if (!cfile.Open(m_sPathYield, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary | CFile::shareDenyNone, NULL))
+	{
+		AfxMessageBox(_T("Fail to save Yield."));
+		return FALSE;
+	}
+
+	int i, j, k;
+	int nCount = m_arPcrYield[0].GetSize();
+	cfile.Write(&nCount, sizeof(int));
+	CPcrYield PcrYield;
+	for (i = 0; i < nCount; i++)
+	{
+		PcrYield = m_arPcrYield[0].GetAt(i);
+		int nSerial = PcrYield.GetSerial();
+		COleDateTime time = PcrYield.GetDateTime();
+		int nTotPcs = PcrYield.GetTotalPcs();		// 누적된 PCS
+		int nGood = PcrYield.GetTotalGood();
+		int nBad = PcrYield.GetTotalBad();
+		int nTotStripOut = PcrYield.GetTotalStripOut();
+		int nStripOut[MAX_STRIP], nDefStrip[MAX_STRIP];
+
+		cfile.Write(&nSerial, sizeof(int));
+		cfile.Write(&time, sizeof(COleDateTime));
+		cfile.Write(&nTotPcs, sizeof(int));
+		cfile.Write(&nGood, sizeof(int));
+		cfile.Write(&nBad, sizeof(int));
+		cfile.Write(&nTotStripOut, sizeof(int));
+
+		for (k = 0; k < MAX_STRIP; k++)
+		{
+			nStripOut[k] = PcrYield.GetStripOut(k);
+			nDefStrip[k] = PcrYield.GetStripTotalBad(k);
+			cfile.Write(&nStripOut[k], sizeof(int));
+			cfile.Write(&nDefStrip[k], sizeof(int));
+		}
+		int nStripDef[MAX_STRIP][MAX_DEF];
+		int nDef[MAX_DEF];
+		for (j = 0; j < MAX_STRIP; j++)
+		{
+			for (k = 0; k < MAX_DEF; k++)
+			{
+				if (!j)
+				{
+					nDef[k] = PcrYield.GetDefNum(k);
+					cfile.Write(&nDef[k], sizeof(int));
+				}
+				nStripDef[j][k] = PcrYield.GetStripDefNum(j, k);
+				cfile.Write(&nStripDef[j][k], sizeof(int));
+			}
+		}
+	}
+	cfile.Close();
+
+	return TRUE;
+}
+
 BOOL CSimpleReelmap::Load()
 {
+	BOOL bRtn[2] = { 0, 0 };
+	bRtn[0] = LoadRmap();
+	bRtn[1] = LoadYield();
+
+	return (bRtn[0] && bRtn[1]);
+}
+
+BOOL CSimpleReelmap::LoadRmap()
+{
 	int i, k;
-	int nCount = m_arPcr[1].GetSize();
+	int nCount = m_arPcr[0].GetSize();
 	if (nCount > 0)
 	{
 		CPcr Pcr;
 		for (i = 0; i < nCount; i++)
 		{
-			Pcr = m_arPcr[1].GetAt(i);
+			Pcr = m_arPcr[0].GetAt(i);
 			Pcr.Free();
 		}
-		m_arPcr[1].RemoveAll();
+		m_arPcr[0].RemoveAll();
 	}
 
 	CFile cfile;
-	if (!cfile.Open(m_sPath, CFile::modeRead | CFile::typeBinary | CFile::shareDenyNone, NULL))
+	if (!cfile.Open(m_sPathRmap, CFile::modeRead | CFile::typeBinary | CFile::shareDenyNone, NULL))
 	{
-		AfxMessageBox(_T("Fail to load."));
+		AfxMessageBox(_T("Fail to load Rmap."));
 		return FALSE;
 	}
 
@@ -612,7 +796,73 @@ BOOL CSimpleReelmap::Load()
 			Pcr.SetImageNum(k, nImageNum);
 			Pcr.SetMarkingCode(k, nMarkingCode);
 		}
-		m_arPcr[1].Add(Pcr);
+		m_arPcr[0].Add(Pcr);
+	}
+
+	return TRUE;
+}
+
+BOOL CSimpleReelmap::LoadYield()
+{
+	int i, j, k;
+	int nCount = m_arPcrYield[0].GetSize();
+	if (nCount > 0)
+		m_arPcrYield[0].RemoveAll();
+
+	CFile cfile;
+	if (!cfile.Open(m_sPathYield, CFile::modeRead | CFile::typeBinary | CFile::shareDenyNone, NULL))
+	{
+		AfxMessageBox(_T("Fail to load Yield."));
+		return FALSE;
+	}
+
+	int nTotalPcr = 0;
+	cfile.Read((void *)&nTotalPcr, sizeof(int));
+
+	for (i = 0; i < nTotalPcr; i++)
+	{
+		CPcrYield PcrYield;
+		int nSerial, nTotPcs, nGood, nBad, nTotStripOut, nStripOut[MAX_STRIP], nDefStrip[MAX_STRIP];		// 누적된 PCS
+		COleDateTime time;
+
+		cfile.Read((void *)&nSerial, sizeof(int));
+		cfile.Read((void *)&time, sizeof(COleDateTime));
+		cfile.Read((void *)&nTotPcs, sizeof(int));
+		cfile.Read((void *)&nGood, sizeof(int));
+		cfile.Read((void *)&nBad, sizeof(int));
+		cfile.Read((void *)&nTotStripOut, sizeof(int));
+		PcrYield.SetSerial(nSerial);
+		PcrYield.SetDateTime(time);
+		PcrYield.SetTotalPcs(nTotPcs);
+		PcrYield.SetTotalGood(nGood);
+		PcrYield.SetTotalBad(nBad);
+		PcrYield.SetTotalStripOut(nTotStripOut);
+
+		for (j = 0; j < MAX_STRIP; j++)
+		{
+			cfile.Read((void *)&nStripOut[j], sizeof(int));
+			cfile.Read((void *)&nDefStrip[j], sizeof(int));
+			PcrYield.SetStripOut(j, nStripOut[j]);
+			PcrYield.SetStripTotalBad(j, nDefStrip[j]);
+		}
+
+		int nStripDef[MAX_STRIP][MAX_DEF];
+		int nDef[MAX_DEF];
+		for (j = 0; j < MAX_STRIP; j++)
+		{
+			for (k = 0; k < MAX_DEF; k++)
+			{
+				if (!j)
+				{
+					cfile.Read((void *)&nDef[k], sizeof(int));
+					PcrYield.SetDefNum(j, nDef[k]);
+				}
+				cfile.Read((void *)&nStripDef[j][k], sizeof(int));
+				PcrYield.SetStripDefNum(j, k, nStripDef[j][k]);
+			}
+		}
+
+		m_arPcrYield[0].Add(PcrYield);
 	}
 
 	return TRUE;
@@ -837,4 +1087,14 @@ CArPcr& CSimpleReelmap::GetAddrArPcr()
 COLORREF CSimpleReelmap::GetDefColor(int nDefCode)
 {
 	return m_rgbDef[nDefCode];
+}
+
+char CSimpleReelmap::GetCodeBigDef(int nIdx)
+{
+	return m_cBigDef[nIdx];
+}
+
+char CSimpleReelmap::GetCodeSmallDef(int nIdx)
+{
+	return m_cSmallDef[nIdx];
 }

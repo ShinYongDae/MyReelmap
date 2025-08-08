@@ -148,18 +148,10 @@ void CMyReelmapDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CMyReelmapDlg::InitReelmap()
 {
-	CString sPath0 = _T("C:\\R2RSet\\Reelmap0.bin");
-	//CString sPath1 = _T("C:\\R2RSet\\Reelmap1.bin");
-	//CString sPath2 = _T("C:\\R2RSet\\Reelmap2.bin");
-	//CString sPath3 = _T("C:\\R2RSet\\Reelmap3.bin");
-	m_pReelmap[0] = new CSimpleReelmap(sPath0, this);
-	//m_pReelmap[1] = new CSimpleReelmap(sPath1, this);
-	//m_pReelmap[2] = new CSimpleReelmap(sPath2, this);
-	//m_pReelmap[3] = new CSimpleReelmap(sPath3, this);
+	CString sPathRmap = _T("C:\\R2RSet\\Reelmap0.bin");
+	CString sPathYield = _T("C:\\R2RSet\\Yield0.bin");
+	m_pReelmap[0] = new CSimpleReelmap(sPathRmap, sPathYield, this);
 	m_pReelmap[0]->Init(20, 30, 3);
-	//m_pReelmap[1]->Init(20, 30, 3);
-	//m_pReelmap[2]->Init(20, 30);
-	//m_pReelmap[3]->Init(20, 30);
 }
 
 void CMyReelmapDlg::InitOpengl()
@@ -184,10 +176,15 @@ void CMyReelmapDlg::InitCamMaster()
 void CMyReelmapDlg::Disp()
 {
 	CString sCurr = _T("");
-	CString sDisp = m_pReelmap[0]->GetTextArPcr(0);
+	CString sDisp = m_pReelmap[0]->GetTextArPcr(0); // nIdx : Up(0), Dn(1)
 	GetDlgItem(IDC_EDIT1)->GetWindowText(sCurr);
 	if(sCurr != sDisp)
 		GetDlgItem(IDC_EDIT1)->SetWindowText(sDisp);
+
+	sDisp = m_pReelmap[0]->GetTextArPcrYield(0); // nIdx : Up(0), Dn(1)
+	GetDlgItem(IDC_EDIT4)->GetWindowText(sCurr);
+	if(sCurr != sDisp)
+		GetDlgItem(IDC_EDIT4)->SetWindowText(sDisp);
 }
 
 void CMyReelmapDlg::OnBnClickedButton1()
@@ -202,10 +199,15 @@ void CMyReelmapDlg::OnBnClickedButton2()
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	CString sCurr = _T("");
 	m_pReelmap[0]->Load();
-	CString sDisp = m_pReelmap[0]->GetTextArPcr(1);
+	CString sDisp = m_pReelmap[0]->GetTextArPcr(0); // nIdx : Up(0), Dn(1)
 	GetDlgItem(IDC_EDIT2)->GetWindowText(sCurr);
 	if (sCurr != sDisp)
 		GetDlgItem(IDC_EDIT2)->SetWindowText(sDisp);
+
+	//sDisp = m_pReelmap[0]->GetTextArPcrYield(0); // nIdx : Up(0), Dn(1)
+	//GetDlgItem(IDC_EDIT4)->GetWindowText(sCurr);
+	//if(sCurr != sDisp)
+	//	GetDlgItem(IDC_EDIT4)->SetWindowText(sDisp);
 }
 
 

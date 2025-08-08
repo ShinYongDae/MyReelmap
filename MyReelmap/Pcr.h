@@ -34,12 +34,10 @@ typedef struct tagDefPcs
 	}
 }stDefPcs;
 
-
 // CPcr
-
 class CPcr
 {
-	CString m_sPathFolder;
+	CString m_sPathFolderShare;
 	int m_nSerial;
 	COleDateTime m_oleDate;
 
@@ -63,7 +61,7 @@ public:
 	~CPcr();
 
 	void Free();
-	void Init(int nSerial, CString sPathFolder = _T("")); // Load pcr file.
+	void Init(int nSerial, CString sPathFolder = _T("")); // LoadPcr(); //Load pcr file.
 
 	int GetSerial();
 	COleDateTime GetDateTime();
