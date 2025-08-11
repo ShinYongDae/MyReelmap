@@ -25,6 +25,9 @@ CMyReelmapDlg::CMyReelmapDlg(CWnd* pParent /*=NULL*/)
 	m_pReelmap[2] = NULL;
 	m_pReelmap[3] = NULL;
 	m_pOpengl = NULL;
+
+	m_nDispPnl[0] = 0;
+	m_nDispPnl[1] = 0;
 }
 
 CMyReelmapDlg::~CMyReelmapDlg()
@@ -152,7 +155,8 @@ void CMyReelmapDlg::InitReelmap()
 {
 	CString sPathRmap = _T("C:\\R2RSet\\Reelmap0.bin");
 	CString sPathYield = _T("C:\\R2RSet\\Yield0.bin");
-	m_pReelmap[0] = new CSimpleReelmap(sPathRmap, sPathYield, this);
+	CString sPathMark = _T("C:\\R2RSet\\Mark0.bin");
+	m_pReelmap[0] = new CSimpleReelmap(sPathRmap, sPathYield, sPathMark, this);
 	m_pReelmap[0]->Init(20, 30, 3);
 }
 
@@ -219,8 +223,17 @@ void CMyReelmapDlg::OnBnClickedButton3()
 	CString sVal;
 	GetDlgItem(IDC_EDIT3)->GetWindowText(sVal);
 	int nSerial = _ttoi(sVal);
+	if (nSerial < 1) return;
 	DrawPnlDef(nSerial);
 	DrawPnlDefNum(nSerial);
+	DrawMarkedPcs(nSerial);
+	int nPrevDispPnl = m_nDispPnl[1];
+	m_nDispPnl[1] = nSerial;			// Right Marking
+	if (nSerial > 0 && m_nDispPnl[1] != nPrevDispPnl)
+		m_nDispPnl[0] = nPrevDispPnl;	// Left Marking
+	m_nDispPnl[0] = m_nDispPnl[1] - 1;
+	m_pReelmap[0]->SetDispPnl(nSerial);
+	m_pOpengl->SetDraw();
 }
 
 COLORREF CMyReelmapDlg::GetDefColor(int nDefCode)
@@ -236,6 +249,11 @@ tagStrPcs& CMyReelmapDlg::GetAddrStrPcs()
 CArPcr& CMyReelmapDlg::GetAddrArPcr()
 {
 	return m_pReelmap[0]->GetAddrArPcr();
+}
+
+CArPcrMark& CMyReelmapDlg::GetAddrArPcrMark()
+{
+	return m_pReelmap[0]->GetAddrArPcrMark();
 }
 
 BOOL CMyReelmapDlg::GetMatrix(int nPcsId, int &nR, int &nC)
@@ -256,17 +274,27 @@ void CMyReelmapDlg::DrawPnlDefNum(int nSerial)
 void CMyReelmapDlg::DrawPnlDef(int nSerial)
 {
 	m_pOpengl->DrawPnlDef(nSerial, GetAddrArPcr(), GetAddrStrPcs());
-	m_pOpengl->SetDraw();
+}
+
+void CMyReelmapDlg::DrawMarkedPcs(int nSerial)
+{
+	m_pOpengl->DrawMarkedPcs(nSerial, GetAddrArPcrMark(), GetAddrStrPcs());
 }
 
 
 void CMyReelmapDlg::OnBnClickedButton4()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	m_pReelmap[0]->SetPcsMkOut(0); // 0: Left Cam Or 1: Right Cam , 불량 피스 인덱스 [ 0 ~ (Total Pcs - 1) ]  // (피스인덱스는 CamMaster에서 정한 것을 기준으로 함.)
+	m_pOpengl->DrawMarkedPcs(0, m_nDispPnl[0], GetAddrArPcrMark(), GetAddrStrPcs());
+	m_pOpengl->SetDraw();
 }
 
 
 void CMyReelmapDlg::OnBnClickedButton5()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	m_pReelmap[0]->SetPcsMkOut(1); // 0: Left Cam Or 1: Right Cam , 불량 피스 인덱스 [ 0 ~ (Total Pcs - 1) ]  // (피스인덱스는 CamMaster에서 정한 것을 기준으로 함.)
+	m_pOpengl->DrawMarkedPcs(1, m_nDispPnl[1], GetAddrArPcrMark(), GetAddrStrPcs());
+	m_pOpengl->SetDraw();
 }

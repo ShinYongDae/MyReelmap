@@ -3,6 +3,7 @@
 
 #include "Pcr.h"
 #include "PcrYield.h"
+#include "PcrMark.h"
 
 #ifndef MAX_STRIP
 #define MAX_STRIP	4
@@ -23,7 +24,7 @@ class CSimpleReelmap : public CWnd
 	CWnd* m_pParent;
 	HWND m_hParent;
 
-	CString m_sPathRmap, m_sPathYield;
+	CString m_sPathRmap, m_sPathYield, m_sPathMark;
 	BOOL CreateWndForm(DWORD dwStyle);
 
 	BOOL m_bThreadAlive, m_bThreadStateEnd;
@@ -33,6 +34,7 @@ class CSimpleReelmap : public CWnd
 
 	CArPcr m_arPcr[2];				// PCR파일 Array : 데이터 [0]-Up, [1]-Dn
 	CArPcrYield m_arPcrYield[2];	// PCR수율 Array : 데이터 [0]-Up, [1]-Dn
+	CArPcrMark m_arPcrMark;			// PCS 마킹 Array
 	BOOL m_bLock;
 	int m_nMaxRow, m_nMaxCol, m_nActionCode;
 
@@ -62,11 +64,17 @@ class CSimpleReelmap : public CWnd
 	void InitColor();
 	BOOL LoadRmap();
 	BOOL LoadYield();
+	BOOL LoadMark();
 	BOOL SaveRmap();
 	BOOL SaveYield();
+	BOOL SaveMark();
+
+	int m_nDispPnl[2]; // Left(0), Right(1)
+	int m_nMkedPcs[2]; // Left(0), Right(1)
+	int GetPcrIdx(int nCam);
 
 public:
-	CSimpleReelmap(CString sPathRmap, CString sPathYield, CWnd* pParent = NULL);
+	CSimpleReelmap(CString sPathRmap, CString sPathYield, CString sPathMark, CWnd* pParent = NULL);
 	virtual ~CSimpleReelmap();
 	static void ProcThrd(const LPVOID lpContext);
 
@@ -78,9 +86,13 @@ public:
 	BOOL Load();
 
 	CArPcr& GetAddrArPcr();
+	CArPcrMark& GetAddrArPcrMark();
 	COLORREF GetDefColor(int nDefCode);
 	char GetCodeBigDef(int nIdx);
 	char GetCodeSmallDef(int nIdx);
+
+	void SetDispPnl(int nSerial);
+	void SetPcsMkOut(int nCam); // 0: Left Cam Or 1: Right Cam , 불량 피스 인덱스 [ 0 ~ (Total Pcs - 1) ]  // (피스인덱스는 CamMaster에서 정한 것을 기준으로 함.)
 
 protected:
 	void ThreadEnd();

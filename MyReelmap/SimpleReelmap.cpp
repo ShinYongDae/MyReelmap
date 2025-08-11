@@ -11,18 +11,24 @@
 
 IMPLEMENT_DYNAMIC(CSimpleReelmap, CWnd)
 
-CSimpleReelmap::CSimpleReelmap(CString sPathRmap, CString sPathYield, CWnd* pParent/*=NULL*/)
+CSimpleReelmap::CSimpleReelmap(CString sPathRmap, CString sPathYield, CString sPathMark, CWnd* pParent/*=NULL*/)
 {
 	m_pParent = pParent;
 	if (pParent)
 		m_hParent = pParent->GetSafeHwnd();
 	m_sPathRmap = sPathRmap;
 	m_sPathYield = sPathYield;
+	m_sPathMark = sPathMark;
 
 	m_bLock = FALSE;
 	m_nMaxRow = 0;
 	m_nMaxCol = 0;
 	m_nActionCode = 0;
+
+	m_nDispPnl[0] = 0;
+	m_nDispPnl[1] = 0;
+	m_nMkedPcs[0] = 0;
+	m_nMkedPcs[1] = 0;
 
 	InitColor();
 
@@ -137,6 +143,18 @@ void CSimpleReelmap::Free()
 	nCount = m_arPcrYield[1].GetSize();
 	if (nCount > 0)
 		m_arPcrYield[1].RemoveAll();
+
+	nCount = m_arPcrMark.GetSize();
+	if (nCount > 0)
+	{
+		CPcrMark PcrMark;
+		for (i = 0; i < nCount; i++)
+		{
+			PcrMark = m_arPcrMark.GetAt(i);
+			PcrMark.Free();
+		}
+		m_arPcrMark.RemoveAll();
+	}
 }
 
 BEGIN_MESSAGE_MAP(CSimpleReelmap, CWnd)
@@ -541,10 +559,13 @@ BOOL CSimpleReelmap::Add(int nSerial)
 {
 	int i;
 	BOOL bAdd = FALSE;
+
 	CPcr Pcr[2];
 	Pcr[0].Init(nSerial); // LoadPcr()
+	CPcrMark PcrMark;
 	CPcrYield PcrYield[2];
 
+	int nTotDef = 0;
 	int nCount = m_arPcr[0].GetSize();
 	for (i = 0; i < nCount; i++)
 	{
@@ -554,6 +575,10 @@ BOOL CSimpleReelmap::Add(int nSerial)
 			Pcr[1].Free();
 			m_arPcr[0].SetAt(i, Pcr[0]); // 인덱스(i)에 값 Pcr[0] 입력
 
+			nTotDef = Pcr[1].GetTotalDef();
+			PcrMark.Init(nSerial, nTotDef, this); 
+			m_arPcrMark.SetAt(i, PcrMark);
+
 			if (i > 0)
 			{
 				PcrYield[1] = m_arPcrYield[0].GetAt(i-1);				// PrevPcrYield
@@ -561,16 +586,20 @@ BOOL CSimpleReelmap::Add(int nSerial)
 			}
 			else
 				PcrYield[0].Init(nSerial, Pcr[0], m_nMaxRow, m_nMaxCol, 20.0, this);				// UpdatePcrYield()
-
 			m_arPcrYield[0].SetAt(i, PcrYield[0]); // 인덱스(i)에 값 PcrYield[0] 입력
 
 			bAdd = TRUE;
 			break;
 		}
 	}
+
 	if (!bAdd)
 	{
 		m_arPcr[0].Add(Pcr[0]);
+
+		nTotDef = Pcr[0].GetTotalDef();
+		PcrMark.Init(nSerial, nTotDef, this);
+		m_arPcrMark.Add(PcrMark);
 
 		nCount = m_arPcrYield[0].GetSize();
 		if (nCount > 0)
@@ -588,11 +617,12 @@ BOOL CSimpleReelmap::Add(int nSerial)
 
 BOOL CSimpleReelmap::Save()
 {
-	BOOL bRtn[2] = { 0, 0 };
+	BOOL bRtn[3] = { 0, 0, 0 };
 	bRtn[0] = SaveRmap();
 	bRtn[1] = SaveYield();
+	bRtn[2] = SaveMark();
 
-	return (bRtn[0] && bRtn[1]);
+	return (bRtn[0] && bRtn[1] && bRtn[2]);
 }
 
 BOOL CSimpleReelmap::SaveRmap()
@@ -710,13 +740,51 @@ BOOL CSimpleReelmap::SaveYield()
 	return TRUE;
 }
 
+BOOL CSimpleReelmap::SaveMark()
+{
+	CFile cfile;
+	if (!cfile.Open(m_sPathMark, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary | CFile::shareDenyNone, NULL))
+	{
+		AfxMessageBox(_T("Fail to save Mark."));
+		return FALSE;
+	}
+
+	int i, j, k;
+	int nCount = m_arPcrMark.GetSize();
+	cfile.Write(&nCount, sizeof(int));
+	CPcrMark PcrMark;
+	for (i = 0; i < nCount; i++)
+	{
+		PcrMark = m_arPcrMark.GetAt(i);
+		int nSerial = PcrMark.GetSerial();
+		COleDateTime time = PcrMark.GetDateTime();
+		int nTotDef = PcrMark.GetTotalDef();		
+		int nTotMark = PcrMark.GetTotalMark();
+
+		cfile.Write(&nSerial, sizeof(int));
+		cfile.Write(&time, sizeof(COleDateTime));
+		cfile.Write(&nTotDef, sizeof(int));
+		cfile.Write(&nTotMark, sizeof(int));
+		
+		for (j = 0; j < nTotMark; j++)
+		{
+			int nMarkedPcsId = PcrMark.GetMarkedPcsId(j);
+			cfile.Write(&nMarkedPcsId, sizeof(int));
+		}
+	}
+	cfile.Close();
+
+	return TRUE;
+}
+
 BOOL CSimpleReelmap::Load()
 {
-	BOOL bRtn[2] = { 0, 0 };
+	BOOL bRtn[3] = { 0, 0, 0 };
 	bRtn[0] = LoadRmap();
 	bRtn[1] = LoadYield();
+	bRtn[2] = LoadMark();
 
-	return (bRtn[0] && bRtn[1]);
+	return (bRtn[0] && bRtn[1] && bRtn[0]);
 }
 
 BOOL CSimpleReelmap::LoadRmap()
@@ -863,6 +931,51 @@ BOOL CSimpleReelmap::LoadYield()
 		}
 
 		m_arPcrYield[0].Add(PcrYield);
+	}
+
+	return TRUE;
+}
+
+BOOL CSimpleReelmap::LoadMark()
+{
+	CFile cfile;
+	if (!cfile.Open(m_sPathMark, CFile::modeRead | CFile::typeBinary | CFile::shareDenyNone, NULL))
+	{
+		AfxMessageBox(_T("Fail to load Mark."));
+		return FALSE;
+	}
+
+	int nCount = m_arPcrMark.GetSize();
+	if (nCount > 0)
+		m_arPcrMark.RemoveAll();
+
+	int nTotalPcr = 0;
+	cfile.Read((void *)&nTotalPcr, sizeof(int));
+
+	int i, j, k;
+	for (i = 0; i < nTotalPcr; i++)
+	{
+		CPcrMark PcrMark;
+
+		COleDateTime time;
+		int nSerial, nTotDef, nTotMark;
+		int *pMarkedPcsId;
+
+		cfile.Read((void *)&nSerial, sizeof(int));
+		cfile.Read((void *)&time, sizeof(COleDateTime));
+		cfile.Read((void *)&nTotDef, sizeof(int));
+		cfile.Read((void *)&nTotMark, sizeof(int));
+
+		PcrMark.Init(nSerial, nTotDef, this);
+
+		for (j = 0; j < nTotMark; j++)
+		{
+			int nMarkedPcsId;
+			cfile.Read((void *)&nMarkedPcsId, sizeof(int));
+			PcrMark.SetMarkedPcsId(nMarkedPcsId);
+		}
+
+		m_arPcrMark.Add(PcrMark);
 	}
 
 	return TRUE;
@@ -1084,6 +1197,11 @@ CArPcr& CSimpleReelmap::GetAddrArPcr()
 	return m_arPcr[0];
 }
 
+CArPcrMark& CSimpleReelmap::GetAddrArPcrMark()
+{
+	return m_arPcrMark;
+}
+
 COLORREF CSimpleReelmap::GetDefColor(int nDefCode)
 {
 	return m_rgbDef[nDefCode];
@@ -1097,4 +1215,95 @@ char CSimpleReelmap::GetCodeBigDef(int nIdx)
 char CSimpleReelmap::GetCodeSmallDef(int nIdx)
 {
 	return m_cSmallDef[nIdx];
+}
+
+void CSimpleReelmap::SetDispPnl(int nSerial)
+{
+	if (m_nDispPnl[1] != nSerial)		// Right Marking
+	{
+		m_nMkedPcs[0] = 0;				// Left Marking
+		m_nMkedPcs[1] = 0;				// Right Marking
+	}
+
+	if (nSerial > 0 && m_nDispPnl[1] > 0)
+		m_nDispPnl[0] = m_nDispPnl[1];	// Left Marking
+	m_nDispPnl[1] = nSerial;			// Right Marking
+}
+
+void CSimpleReelmap::SetPcsMkOut(int nCam) // 0: Left Cam Or 1: Right Cam , 불량 피스 인덱스 [ 0 ~ (Total Pcs - 1) ]  // (피스인덱스는 CamMaster에서 정한 것을 기준으로 함.)
+{
+	int nPcsIdx = m_nMkedPcs[nCam];
+	CPcrMark PcrMark;
+	int nCount = m_arPcrMark.GetCount();
+	if (nCount < 1) return;
+
+	int nSerial, nCurSerial;
+	for (int i = 0; i < nCount; i++)
+	{
+		PcrMark = m_arPcrMark.GetAt(i);
+		nSerial = PcrMark.GetSerial();
+		if (nCam == 0)	// Left
+		{
+			nCurSerial = m_nDispPnl[0];	// Left
+			if (!nCurSerial)
+				nCurSerial = m_nDispPnl[1] - 1;
+
+			if (nSerial == nCurSerial)
+			{
+				int nPcrIdx = GetPcrIdx(0);
+				if (nPcrIdx > -1)
+				{
+					CPcr Pcr = m_arPcr[0].GetAt(nPcrIdx);
+					int nMarkedPcsId = Pcr.GetPcsId(nPcsIdx);
+					PcrMark.SetMarkedPcsId(nMarkedPcsId);
+					m_arPcrMark.SetAt(i, PcrMark);
+					m_nMkedPcs[nCam]++;
+				}
+			}
+		}
+		else if (nCam == 1)	// Right
+		{
+			nCurSerial = m_nDispPnl[1];	// Right
+			if (nSerial == nCurSerial)
+			{
+				int nPcrIdx = GetPcrIdx(1);
+				if (nPcrIdx > -1)
+				{
+					CPcr Pcr = m_arPcr[0].GetAt(nPcrIdx);
+					int nMarkedPcsId = Pcr.GetPcsId(nPcsIdx);
+					PcrMark.SetMarkedPcsId(nMarkedPcsId);
+					m_arPcrMark.SetAt(i, PcrMark);
+					m_nMkedPcs[nCam]++;
+				}
+			}
+		}
+	}
+}
+
+int CSimpleReelmap::GetPcrIdx(int nCam)
+{
+	int nCurrPcr, nPcrIdx = -1;
+
+	int nCount = m_arPcr[0].GetSize();
+
+	if (nCam == 0)	// Left
+	{
+		nCurrPcr = m_nDispPnl[0];	// Left
+	}
+	else if (nCam == 1)	// Right
+	{
+		nCurrPcr = m_nDispPnl[1];	// Right
+	}
+
+	for (int i = 0; i < nCount; i++)
+	{
+		CPcr Pcr = m_arPcr[0].GetAt(i);
+		if (Pcr.GetSerial() == nCurrPcr)
+		{
+			nPcrIdx = i;
+			break;
+		}
+	}
+
+	return nPcrIdx;
 }

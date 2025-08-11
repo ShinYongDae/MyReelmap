@@ -75,6 +75,7 @@ CSimpleOpengl::~CSimpleOpengl()
 
 	RemoveAllLine();
 	RemoveAllRect();
+	RemoveAllCross();
 	RemoveAllText();
 
 	if (m_bFont)
@@ -117,6 +118,15 @@ void CSimpleOpengl::RemoveAllRect()
 	if (nTotal > 0)
 	{
 		m_arRect.RemoveAll();
+	}
+}
+
+void CSimpleOpengl::RemoveAllCross()
+{
+	int nTotal = m_arCross.GetCount();
+	if (nTotal > 0)
+	{
+		m_arCross.RemoveAll();
 	}
 }
 
@@ -634,6 +644,15 @@ void CSimpleOpengl::AddRect(stVertex v1, stVertex v2, COLORREF color)
 	m_arRect.Add(_rect);
 }
 
+void CSimpleOpengl::AddCross(stVertex v1, stVertex v2, COLORREF color)
+{
+	stCross _cross;
+	_cross.v1 = v1;
+	_cross.v2 = v2;
+	_cross.color = color;
+	m_arCross.Add(_cross);
+}
+
 void CSimpleOpengl::Draw()
 {
 	DrawClear();
@@ -668,9 +687,22 @@ void CSimpleOpengl::Draw()
 		}
 	}
 
+	nTotal = m_arCross.GetCount();
+	if (nTotal > 0)
+	{
+		stCross _cross;
+		for (i = 0; i < nTotal; i++)
+		{
+			_cross = m_arCross.GetAt(i);
+			DrawBegin(Opengl::modLine, 2, _cross.color);
+			DrawCross(_cross.v1, _cross.v2);
+			DrawEnd();
+		}
+	}
+
 	glFlush();											// 그림이 다 그렸졌다는 걸 알려줌. 모든 명령어를 실행되게 함.
 	SwapBuffers(m_hDc);									// OpenGL이 완료한 그림을 새롭게 화면에 그린다 - 현재 buffer에 그려진 것과 Frame에 그려진 것을 swap(Double buffer), 그리기 함수에서 glFlush 대신 사용
-	Sleep(10);
+	Sleep(30);
 
 	DrawPnlDefNum();
 	//DrawPnlDefNum();
@@ -1476,3 +1508,291 @@ void CSimpleOpengl::DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 	delete[] pPnlNum;
 	delete[] pPnlDefNum;
 }
+
+void CSimpleOpengl::DrawCross(stVertex V1, stVertex V2)
+{
+	glVertex3f(V1.x, V1.y, V1.z);
+	glVertex3f(V2.x, V2.y, V2.z);
+
+	glVertex3f(V1.x, V2.y, V2.z);
+	glVertex3f(V2.x, V1.y, V2.z);
+}
+
+void CSimpleOpengl::DrawMarkedPcs(int nCam, int nSerial, CArPcrMark& arPcrMark, tagStrPcs& StrPcs)
+{
+	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
+
+	int nCount = arPcrMark.GetSize();
+	if (nCount < 1)
+		return;
+
+	CRect rtDispCtrl;
+	::GetClientRect(m_hCtrl, &rtDispCtrl);
+	int nWorldMargin = 6;	// [mm] = [dot]
+	int nWorldStX = 3;		// [mm] = [dot]
+	int nWorldW = rtDispCtrl.right - rtDispCtrl.left - nWorldMargin;
+	int nWorldH = rtDispCtrl.bottom - rtDispCtrl.top;
+
+	int nTotPnl = 6;
+	int nSelMarkingPnl = 2; // Index start from right
+	int nEstimatedPnlNum = -1;
+	CPcrMark PcrMark;
+	int nPcrIdx = -1, nTotDef = -1, nTotMark = 0;
+
+	int i = 0, k = 0, nR = -1, nC = -1;
+	stVertex v1, v2;
+	double fWidth, fHeight;
+	double fData1, fData2, fData3, fData4;
+	double dPixelSize = 2.5; // [um/pixel]
+	double mmPxl = dPixelSize / 1000.0; // [mm]
+	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
+	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmSpace = 2.0;
+	double dDrawStPosX = 0.0;
+
+	for (i = 0; i < nCount; i++)
+	{
+		PcrMark = arPcrMark.GetAt(i);
+		if (PcrMark.GetSerial() == nSerial)
+		{
+			nPcrIdx = i;
+			break;
+		}
+	}
+	if (nPcrIdx < 0)
+	{
+		AfxMessageBox(_T("선택한 시리얼에 대한 PCR 정보가 없습니다."));
+		return;
+	}
+
+	int nDispPcrIdx = -1;
+	//RemoveAllRect();
+	for (k = 0; k < nTotPnl; k++) // Index start from left
+	{
+		if (nCam == 0)
+		{
+			nEstimatedPnlNum = nSerial - (nTotPnl - (nSelMarkingPnl + 1 + k + 1));
+			nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + 1 + k + 1));
+		}
+		else if (nCam == 1)
+		{
+			nEstimatedPnlNum = nSerial - (nTotPnl - (nSelMarkingPnl + k + 1));
+			nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + k + 1));
+		}
+
+		fData1 = (double)StrPcs.m_stFrameRgnPix[0].iStartX * mmPxl;	// left
+		fData2 = (double)StrPcs.m_stFrameRgnPix[0].iStartY * mmPxl;	// top
+		fData3 = (double)StrPcs.m_stFrameRgnPix[0].iEndX * mmPxl;	// right
+		fData4 = (double)StrPcs.m_stFrameRgnPix[0].iEndY * mmPxl;	// bottom
+		fWidth = (fData3 - fData1) + (dFrmMargin[0] + dFrmMargin[2]);
+		fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
+
+		fData1 += (double)nWorldStX;
+		fData1 += dFrmSpace * k;
+
+		int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);
+		if ((nWorldW - nRealW) < 0.0)
+		{
+			int nNeedX = nRealW - nWorldW;
+			dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
+			dFrmOffset[0] = 0.0;
+		}
+		else
+			dFrmOffset[0] = (nWorldW - fWidth*nTotPnl) / 2.0;
+
+		dDrawStPosX = fWidth * dScaleX * k;
+
+		if ((nWorldH - fHeight) < 0.0)
+		{
+			int nNeedY = fHeight - nWorldH;
+			dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
+			dFrmOffset[1] = 0.0;
+		}
+		else
+			dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+
+		if (nDispPcrIdx >= 0)
+		{
+			if (nDispPcrIdx < nCount)
+			{
+				PcrMark = arPcrMark[nDispPcrIdx];
+				int nDispPnlNum = PcrMark.GetSerial();
+				if (nEstimatedPnlNum != nDispPnlNum)
+					AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
+
+				nTotMark = PcrMark.GetTotalMark();
+				for (i = 0; i < nTotMark; i++)
+				{
+					int nPcsId = PcrMark.GetMarkedPcsId(i);
+					if (nPcsId < 0) break;
+
+					double fNeed = 0.0;
+					pParent->GetMatrix(nPcsId, nR, nC);
+					fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
+					fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
+					fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
+					fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
+					fWidth = (fData3 - fData1) * dScaleX;
+					fHeight = (fData4 - fData2) * dScaleY;
+					fNeed = (fData3 - fData1) - fWidth;
+
+					fData1 += (double)nWorldStX;
+					fData1 += dFrmSpace * k;
+					fData1 += dFrmOffset[0];									// left
+					fData2 += dFrmOffset[1];									// top
+
+					fData1 += dDrawStPosX - (fNeed*(double)nC);					// left
+					fData1 += dFrmMargin[0] * dScaleX;							// left
+
+					fData3 = fData1 + fWidth;									// right
+					fData4 = fData2 + fHeight;									// bottom
+
+					v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+					v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+					AddCross(v1, v2, RGB(0, 0, 0));
+				}
+			}
+		}
+		else
+		{
+			;
+		}
+	}
+}
+
+void CSimpleOpengl::DrawMarkedPcs(int nSerial, CArPcrMark& arPcrMark, tagStrPcs& StrPcs)
+{
+	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
+
+	int nCount = arPcrMark.GetSize();
+	if (nCount < 1)
+		return;
+
+	CRect rtDispCtrl;
+	::GetClientRect(m_hCtrl, &rtDispCtrl);
+	int nWorldMargin = 6;	// [mm] = [dot]
+	int nWorldStX = 3;		// [mm] = [dot]
+	int nWorldW = rtDispCtrl.right - rtDispCtrl.left - nWorldMargin;
+	int nWorldH = rtDispCtrl.bottom - rtDispCtrl.top;
+
+	int nTotPnl = 6;
+	int nSelMarkingPnl = 2; // Index start from right
+	int nEstimatedPnlNum = -1;
+	CPcrMark PcrMark;
+	int nPcrIdx = -1, nTotDef = -1, nTotMark = 0;
+
+	int i = 0, k = 0, nR = -1, nC = -1;
+	stVertex v1, v2;
+	double fWidth, fHeight;
+	double fData1, fData2, fData3, fData4;
+	double dPixelSize = 2.5; // [um/pixel]
+	double mmPxl = dPixelSize / 1000.0; // [mm]
+	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
+	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
+	double dFrmSpace = 2.0;
+	double dDrawStPosX = 0.0;
+
+	for (i = 0; i < nCount; i++)
+	{
+		PcrMark = arPcrMark.GetAt(i);
+		if (PcrMark.GetSerial() == nSerial)
+		{
+			nPcrIdx = i;
+			break;
+		}
+	}
+	if (nPcrIdx < 0)
+	{
+		AfxMessageBox(_T("선택한 시리얼에 대한 PCR 정보가 없습니다."));
+		return;
+	}
+
+	int nDispPcrIdx = -1;
+	RemoveAllCross();
+	for (k = 0; k < nTotPnl; k++) // Index start from left
+	{
+		nEstimatedPnlNum = nSerial - (nTotPnl - (nSelMarkingPnl + k + 1));
+		nDispPcrIdx = nPcrIdx - (nTotPnl - (nSelMarkingPnl + k + 1));
+
+		fData1 = (double)StrPcs.m_stFrameRgnPix[0].iStartX * mmPxl;	// left
+		fData2 = (double)StrPcs.m_stFrameRgnPix[0].iStartY * mmPxl;	// top
+		fData3 = (double)StrPcs.m_stFrameRgnPix[0].iEndX * mmPxl;	// right
+		fData4 = (double)StrPcs.m_stFrameRgnPix[0].iEndY * mmPxl;	// bottom
+		fWidth = (fData3 - fData1) + (dFrmMargin[0] + dFrmMargin[2]);
+		fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
+
+		fData1 += (double)nWorldStX;
+		fData1 += dFrmSpace * k;
+
+		int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);
+		if ((nWorldW - nRealW) < 0.0)
+		{
+			int nNeedX = nRealW - nWorldW;
+			dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
+			dFrmOffset[0] = 0.0;
+		}
+		else
+			dFrmOffset[0] = (nWorldW - fWidth*nTotPnl) / 2.0;
+
+		dDrawStPosX = fWidth * dScaleX * k;
+
+		if ((nWorldH - fHeight) < 0.0)
+		{
+			int nNeedY = fHeight - nWorldH;
+			dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
+			dFrmOffset[1] = 0.0;
+		}
+		else
+			dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+
+		if (nDispPcrIdx >= 0)
+		{
+			if (nDispPcrIdx < nCount)
+			{
+				PcrMark = arPcrMark[nDispPcrIdx];
+				int nDispPnlNum = PcrMark.GetSerial();
+				if (nEstimatedPnlNum != nDispPnlNum)
+					AfxMessageBox(_T("PCR의 시리얼 정보가 연속적이지 않습니다."));
+
+				nTotMark = PcrMark.GetTotalMark();
+				for (i = 0; i < nTotMark; i++)
+				{
+					int nPcsId = PcrMark.GetMarkedPcsId(i);
+					if (nPcsId < 0) break;
+					
+					double fNeed = 0.0;
+					pParent->GetMatrix(nPcsId, nR, nC);
+					fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
+					fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
+					fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
+					fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
+					fWidth = (fData3 - fData1) * dScaleX;
+					fHeight = (fData4 - fData2) * dScaleY;
+					fNeed = (fData3 - fData1) - fWidth;
+
+					fData1 += (double)nWorldStX;
+					fData1 += dFrmSpace * k;
+					fData1 += dFrmOffset[0];									// left
+					fData2 += dFrmOffset[1];									// top
+
+					fData1 += dDrawStPosX - (fNeed*(double)nC);					// left
+					fData1 += dFrmMargin[0] * dScaleX;							// left
+
+					fData3 = fData1 + fWidth;									// right
+					fData4 = fData2 + fHeight;									// bottom
+
+					v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+					v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+					AddCross(v1, v2, RGB(0,0,0));			
+				}
+			}
+		}
+		else
+		{
+			;
+		}
+	}
+}
+

@@ -122,6 +122,19 @@ struct stRect
 };
 typedef CArray<stRect, stRect> CArRect;
 
+struct stCross
+{
+	stVertex v1, v2;
+	COLORREF color;
+	stCross()
+	{
+		v1.x = 0; v1.y = 0; v1.z = 0;
+		v2.x = 0; v2.y = 0; v2.z = 0;
+		color = RGB(255, 255, 255);
+	}
+};
+typedef CArray<stCross, stCross> CArCross;
+
 struct stText
 {
 	CString str;
@@ -159,6 +172,7 @@ class CSimpleOpengl : public CStatic //public CWnd
 	int m_nWorldW, m_nWorldH;
 	CArLine m_arLine;
 	CArRect m_arRect;
+	CArCross m_arCross;
 	CArText m_arText;
 
 	BOOL m_bInit;
@@ -190,16 +204,18 @@ class CSimpleOpengl : public CStatic //public CWnd
 	void DrawBegin(int mode, int size, COLORREF color);
 	void DrawEnd();
 	void DrawRect(stVertex V1, stVertex V2);
+	void DrawCross(stVertex V1, stVertex V2);
 	void DrawLine(stVertex V1, stVertex V2);
 	void Draw();
 	void DrawClear();
 	void DrawClearColor(COLORREF color);
 	void DrawTestText();
 	void DrawText(CString sText, CPoint ptPnt, COLORREF rgb);
-	void DrawPnlDefNum();
+	void DrawPnlDefNum(); // ¸±¸Ê Reflash ÈÄ ´Ù½Ã GDI °´Ã¼¸¦ µå·ÎÀ×ÇÏ´Â ÇÔ¼ö.
 
 	void RemoveAllLine();
 	void RemoveAllRect();
+	void RemoveAllCross();
 	void RemoveAllText();
 
 	BOOL GetRngDrawPnl(int nDrawPnlIdx, tagStrPcs& StrPcs, CPoint& ptLT, CPoint& ptRB);
@@ -227,11 +243,14 @@ public:
 public:
 	void AddLine(stVertex v1, stVertex v2, COLORREF color = RGB(255, 255, 255));
 	void AddRect(stVertex v1, stVertex v2, COLORREF color = RGB(255, 255, 255));
+	void AddCross(stVertex v1, stVertex v2, COLORREF color = RGB(0, 0, 0));
 	void AddText(CString str, CPoint pos = {0,0}, COLORREF color = RGB(255, 255, 255)); // DWORD COLORREF 0x00bbggrr
 
 	void DrawStrPcs(tagStrPcs& StrPcs);
 	void DrawPnlDefNum(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs);
 	void DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs);
+	void DrawMarkedPcs(int nSerial, CArPcrMark& arPcrMark, tagStrPcs& StrPcs);				// ¸±¸ÊÀÌ ¼ÂÆÃµÉ ¶§ À§Ä¡ Ç¥½Ã
+	void DrawMarkedPcs(int nCam, int nSerial, CArPcrMark& arPcrMark, tagStrPcs& StrPcs);	// ÆÝÄª Áß¿¡ ÆÝÄª À§Ä¡ Ç¥½Ã
 
 
 protected:

@@ -15,6 +15,7 @@ class CMyReelmapDlg : public CDialog
 	CSimpleCamMaster m_CamMaster;
 
 	BOOL m_bTimer;
+	int m_nDispPnl[2]; // Left(0), Right(1)
 
 	void InitReelmap();
 	void InitOpengl();
@@ -24,6 +25,7 @@ class CMyReelmapDlg : public CDialog
 	void DrawStrPcs();
 	void DrawPnlDefNum(int nSerial);
 	void DrawPnlDef(int nSerial);
+	void DrawMarkedPcs(int nSerial);
 
 // 생성입니다.
 public:
@@ -37,6 +39,7 @@ public:
 
 public:
 	CArPcr& GetAddrArPcr();
+	CArPcrMark& GetAddrArPcrMark();
 	tagStrPcs& GetAddrStrPcs();
 	BOOL GetMatrix(int nPcsId, int &nR, int &nC);
 	COLORREF GetDefColor(int nDefCode);
