@@ -153,11 +153,28 @@ void CMyReelmapDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CMyReelmapDlg::InitReelmap()
 {
+	CString sPathInfo = _T("C:\\R2RSet\\Info0.bin");
 	CString sPathRmap = _T("C:\\R2RSet\\Reelmap0.bin");
 	CString sPathYield = _T("C:\\R2RSet\\Yield0.bin");
 	CString sPathMark = _T("C:\\R2RSet\\Mark0.bin");
-	m_pReelmap[0] = new CSimpleReelmap(sPathRmap, sPathYield, sPathMark, this);
-	m_pReelmap[0]->Init(20, 30, 3);
+	m_pReelmap[0] = new CSimpleReelmap(RMapUp, sPathInfo, sPathRmap, sPathYield, sPathMark, this);
+
+	stRmapInfo stInfo;
+	stInfo.m_sMcName = _T("BAO14");
+	stInfo.m_sUserName = _T("서봉율");
+	stInfo.m_sModel = _T("L231115S31");
+	stInfo.m_sLot = _T("200125279");
+	stInfo.m_sLayer = _T("TOP-3-050");
+	stInfo.m_sLayerUp = _T("TOP-3-050");
+	stInfo.m_sLayerDn = _T("BOTTOM-4-050");
+	stInfo.m_sItsCode = _T("200125279");
+	stInfo.m_sProcessCode = _T("VS90");
+	stInfo.m_nActionCode = 3;
+	stInfo.m_nMaxRow = 20;
+	stInfo.m_nMaxCol = 30;
+	stInfo.m_nMaxStrip = 4;
+	stInfo.m_nMaxDefCode = 30;
+	m_pReelmap[0]->Init(stInfo);
 }
 
 void CMyReelmapDlg::InitOpengl()
@@ -182,12 +199,12 @@ void CMyReelmapDlg::InitCamMaster()
 void CMyReelmapDlg::Disp()
 {
 	CString sCurr = _T("");
-	CString sDisp = m_pReelmap[0]->GetTextArPcr(0); // nIdx : Up(0), Dn(1)
+	CString sDisp = m_pReelmap[0]->GetTextArPcr();
 	GetDlgItem(IDC_EDIT1)->GetWindowText(sCurr);
 	if(sCurr != sDisp)
 		GetDlgItem(IDC_EDIT1)->SetWindowText(sDisp);
 
-	sDisp = m_pReelmap[0]->GetTextArPcrYield(0); // nIdx : Up(0), Dn(1)
+	sDisp = m_pReelmap[0]->GetTextArPcrYield(); 
 	GetDlgItem(IDC_EDIT4)->GetWindowText(sCurr);
 	if(sCurr != sDisp)
 		GetDlgItem(IDC_EDIT4)->SetWindowText(sDisp);
@@ -205,12 +222,12 @@ void CMyReelmapDlg::OnBnClickedButton2()
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	CString sCurr = _T("");
 	m_pReelmap[0]->Load();
-	CString sDisp = m_pReelmap[0]->GetTextArPcr(0); // nIdx : Up(0), Dn(1)
+	CString sDisp = m_pReelmap[0]->GetTextArPcr();
 	GetDlgItem(IDC_EDIT2)->GetWindowText(sCurr);
 	if (sCurr != sDisp)
 		GetDlgItem(IDC_EDIT2)->SetWindowText(sDisp);
 
-	//sDisp = m_pReelmap[0]->GetTextArPcrYield(0); // nIdx : Up(0), Dn(1)
+	//sDisp = m_pReelmap[0]->GetTextArPcrYield();
 	//GetDlgItem(IDC_EDIT4)->GetWindowText(sCurr);
 	//if(sCurr != sDisp)
 	//	GetDlgItem(IDC_EDIT4)->SetWindowText(sDisp);
