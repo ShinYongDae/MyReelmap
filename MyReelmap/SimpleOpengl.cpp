@@ -802,13 +802,17 @@ BOOL CSimpleOpengl::GetRngDrawPnl(int nDrawPnlIdx, tagStrPcs& StrPcs, CPoint& pt
 
 	double fWidth, fHeight;
 	double fData1, fData2, fData3, fData4;
-	double dPixelSize = 2.5; // [um/pixel]
+	double dPixelSize = CAMMST_PIXEL_RESOLUTION; // [um/pixel]
 	double mmPxl = dPixelSize / 1000.0; // [mm]
 	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
 	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmSpace = 2.0;
 	double dDrawStPosX = 0.0;
+
+	double dDispWidth, dDispHeight;
+	double dPcsScaleY = 1.0;		// for Display Def Num and Serial Num.
+	double dDispPcsScaleStY = 1.0;	// for Display Def Num and Serial Num.
 
 	int i = 0, k = 0, nR = -1, nC = -1;
 	int nTotPnl = 6, nSelMarkingPnl = 2;
@@ -841,17 +845,30 @@ BOOL CSimpleOpengl::GetRngDrawPnl(int nDrawPnlIdx, tagStrPcs& StrPcs, CPoint& pt
 		int nNeedY = fHeight - nWorldH;
 		dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
 		dFrmOffset[1] = 0.0;
+
+		dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)(nWorldH + nNeedY));
 	}
 	else
+	{
 		dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+		dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)nWorldH);
+	}
 
 	fData1 += dFrmOffset[0] + dDrawStPosX;						// left
 	fData2 += dFrmOffset[1];									// top
 
-	fData3 = fData1 + fWidth * dScaleX;							// right
-	fData4 = fData2 + fHeight * dScaleY;						// bottom
+	dDispWidth = fWidth * dScaleX;
+	dDispHeight = fHeight * dScaleY;
+
+	//fData3 = fData1 + fWidth * dScaleX;						// right
+	//fData4 = fData2 + fHeight * dScaleY;						// bottom
+	fData3 = fData1 + dDispWidth;								// right
+	fData4 = fData2 + dDispHeight;								// bottom
 	fData2 -= dFrmMargin[1];									// top
 	fData4 += dFrmMargin[3];									// bottom
+
+	fData2 += nWorldH * RMAP_TOTAL_DEF_SCALE;					// for Display Total def and Serial Num
+	fData4 -= nWorldH * RMAP_SERIAL_NUM_SCALE;					// for Display Total def and Serial Num
 
 	ptLT.x = fData1;											// left
 	ptLT.y = fData2;											// top
@@ -863,8 +880,10 @@ BOOL CSimpleOpengl::GetRngDrawPnl(int nDrawPnlIdx, tagStrPcs& StrPcs, CPoint& pt
 
 void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 {
+	// 화면의 한픽셀을 실제 기판의 1mm로 가정하여 드로잉을 함.
 	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
 
+	CString sMsg;
 	COLORREF color = RGB_WHITE;
 	int nWorldMargin = 6;	// [mm] = [dot]
 	int nWorldStX = 3;		// [mm] = [dot]
@@ -884,14 +903,18 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 
 	double fWidth, fHeight;
 	double fData1, fData2, fData3, fData4;
-	double dPixelSize = 2.5; // [um/pixel]
+	double dPixelSize = CAMMST_PIXEL_RESOLUTION; // [um/pixel]
 	double mmPxl = dPixelSize / 1000.0; // [mm]
 	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
 	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmSpace = 2.0;
 	double dDrawStPosX = 0.0;
-	
+
+	double dDispWidth, dDispHeight;
+	double dPcsScaleY = 1.0;		// for Display Def Num and Serial Num.
+	double dDispPcsScaleStY = 1.0;	// for Display Def Num and Serial Num.
+
 	RemoveAllLine();
 	for (k = 0; k < nTotPnl; k++) // Draw Panel from Left to Right. 
 	{
@@ -927,52 +950,77 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 					int nNeedY = fHeight - nWorldH;
 					dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
 					dFrmOffset[1] = 0.0;
+
+					dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)(nWorldH + nNeedY));
 				}
 				else
+				{
 					dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+					dPcsScaleY = (double)( (double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)nWorldH );
+				}
 			}
 			
 			fData1 += dFrmOffset[0] + dDrawStPosX;						// left
 			fData2 += dFrmOffset[1];									// top
 
-			fData3 = fData1 + fWidth * dScaleX;							// right
-			fData4 = fData2 + fHeight * dScaleY;						// bottom
+			dDispWidth = fWidth * dScaleX;
+			dDispHeight = fHeight * dScaleY;
+
+			fData3 = fData1 + dDispWidth;								// right
+			fData4 = fData2 + dDispHeight;								// bottom
 			fData2 -= dFrmMargin[1];									// top
 			fData4 += dFrmMargin[3];									// bottom
+
+			fData2 += nWorldH * RMAP_TOTAL_DEF_SCALE;					// for Display Total def and Serial Num
+			fData4 -= nWorldH * RMAP_SERIAL_NUM_SCALE;					// for Display Total def and Serial Num
 
 			if (k == nSelMarkingPnl || k == nSelMarkingPnl+1)
 				color = RGB_RED;
 			else
 				color = RGB_WHITE;
 
-			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
-			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2, color);
+			// Add Frame Region
+			//v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+			//v2.x = fData1; v2.y = fData4; v2.z = 0.0;
+			//AddLine(v1, v2, color);
 
-			v1.x = fData1; v1.y = fData4; v1.z = 0.0;
-			v2.x = fData3; v2.y = fData4; v2.z = 0.0;
-			AddLine(v1, v2, color);
+			//v1.x = fData1; v1.y = fData4; v1.z = 0.0;
+			//v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+			//AddLine(v1, v2, color);
 
-			v1.x = fData3; v1.y = fData4; v1.z = 0.0;
-			v2.x = fData3; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2, color);
+			//v1.x = fData3; v1.y = fData4; v1.z = 0.0;
+			//v2.x = fData3; v2.y = fData2; v2.z = 0.0;
+			//AddLine(v1, v2, color);
 
-			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
-			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
-			AddLine(v1, v2, color);
+			//v1.x = fData3; v1.y = fData2; v1.z = 0.0;
+			//v2.x = fData1; v2.y = fData2; v2.z = 0.0;
+			//AddLine(v1, v2, color);
 		}
+
 
 		for (i = 0; i < nTotPcs; i++)
 		{
 			double fNeed = 0.0;
-			pParent->GetMatrix(i, nR, nC);
+			if(!pParent->GetMatrix(i, nR, nC))
+			{
+				sMsg.Format(_T("Fail to GetMatrix of PcsId(%d)!!!"), i);
+				AfxMessageBox(sMsg);
+				return;
+			}
+
 			fData1 = (double)StrPcs.m_stPieceRgnPix[i].iStartX * mmPxl;	// left
 			fData2 = (double)StrPcs.m_stPieceRgnPix[i].iStartY * mmPxl;	// top
 			fData3 = (double)StrPcs.m_stPieceRgnPix[i].iEndX * mmPxl;	// right
 			fData4 = (double)StrPcs.m_stPieceRgnPix[i].iEndY * mmPxl;	// bottom
-			fWidth = (fData3 - fData1) * dScaleX;
-			fHeight = (fData4 - fData2) * dScaleY;
+			//fWidth = (fData3 - fData1) * dScaleX;
+			//fHeight = (fData4 - fData2) * dScaleY;
+			fWidth = (fData3 - fData1) * dScaleX * RMAP_PCS_SCALE;
+			fHeight = (fData4 - fData2) * dPcsScaleY * RMAP_PCS_SCALE;
 			fNeed = (fData3 - fData1) - fWidth;
+
+			dDispPcsScaleStY = (fData4 - fData2) * (1.0 - dPcsScaleY * RMAP_PCS_SCALE); // *2.0;
+			fData2 *= dPcsScaleY;
+			fData2 += nWorldH * RMAP_TOTAL_DEF_SCALE - dDispPcsScaleStY;
 
 			fData1 += (double)nWorldStX;
 			fData1 += dFrmSpace * k;
@@ -985,6 +1033,11 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 			fData3 = fData1 + fWidth;									// right
 			fData4 = fData2 + fHeight;									// bottom
 
+			//fData4 = fData2 + fHeight;								// bottom
+			//fData3 -= fWidth * (1.0 - RMAP_PCS_SCALE);				// for Display Total def and Serial Num
+			//fData4 -= fHeight * (1.0 - RMAP_PCS_SCALE);				// for Display Total def and Serial Num
+
+			// Add PCS Region
 			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
 			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
 			AddLine(v1, v2);
@@ -1000,6 +1053,88 @@ void CSimpleOpengl::DrawStrPcs(tagStrPcs& StrPcs)
 			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
 			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
 			AddLine(v1, v2);
+		}
+
+
+		for (i = 0; i < nTotStrip; i++)
+		{
+			fData1 = (double)StrPcs.m_stFrameRgnPix[i].iStartX * mmPxl;	// left
+			fData2 = (double)StrPcs.m_stFrameRgnPix[i].iStartY * mmPxl;	// top
+			fData3 = (double)StrPcs.m_stFrameRgnPix[i].iEndX * mmPxl;	// right
+			fData4 = (double)StrPcs.m_stFrameRgnPix[i].iEndY * mmPxl;	// bottom
+			fWidth = (fData3 - fData1) + (dFrmMargin[0] + dFrmMargin[2]);
+			fHeight = (fData4 - fData2) + (dFrmMargin[1] + dFrmMargin[3]);
+
+			fData1 += (double)nWorldStX;
+			fData1 += dFrmSpace * k;
+
+			if (!i)
+			{
+				int nRealW = fWidth*nTotPnl + dFrmSpace*(nTotPnl - 1);// +(nWorldMargin + nWorldStX);
+				if ((nWorldW - nRealW) < 0.0)
+				{
+					int nNeedX = nRealW - nWorldW;
+					dScaleX = (double)((double)nWorldW / (double)(nWorldW + nNeedX));
+					dFrmOffset[0] = 0.0;
+				}
+				else
+					dFrmOffset[0] = (nWorldW - fWidth*nTotPnl) / 2.0;
+
+				dDrawStPosX = fWidth * dScaleX * k;
+
+				if ((nWorldH - fHeight) < 0.0)
+				{
+					int nNeedY = fHeight - nWorldH;
+					dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
+					dFrmOffset[1] = 0.0;
+
+					dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)(nWorldH + nNeedY));
+				}
+				else
+				{
+					dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+					dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)nWorldH);
+				}
+			}
+
+			fData1 += dFrmOffset[0] + dDrawStPosX;						// left
+			fData2 += dFrmOffset[1];									// top
+
+			dDispWidth = fWidth * dScaleX;
+			dDispHeight = fHeight * dScaleY;
+
+			fData3 = fData1 + dDispWidth;								// right
+			fData4 = fData2 + dDispHeight;								// bottom
+			fData2 -= dFrmMargin[1];									// top
+			fData4 += dFrmMargin[3];									// bottom
+
+			fData2 += nWorldH * RMAP_TOTAL_DEF_SCALE;					// for Display Total def and Serial Num
+			fData4 -= nWorldH * RMAP_SERIAL_NUM_SCALE;					// for Display Total def and Serial Num
+
+			fData2 -= dDispPcsScaleStY * 2.0;							// for Display Total def and Serial Num
+			fData4 -= dDispPcsScaleStY;									// for Display Total def and Serial Num
+
+			if (k == nSelMarkingPnl || k == nSelMarkingPnl + 1)
+				color = RGB_RED;
+			else
+				color = RGB_WHITE;
+
+			// Add Frame Region
+			v1.x = fData1; v1.y = fData2; v1.z = 0.0;
+			v2.x = fData1; v2.y = fData4; v2.z = 0.0;
+			AddLine(v1, v2, color);
+
+			v1.x = fData1; v1.y = fData4; v1.z = 0.0;
+			v2.x = fData3; v2.y = fData4; v2.z = 0.0;
+			AddLine(v1, v2, color);
+
+			v1.x = fData3; v1.y = fData4; v1.z = 0.0;
+			v2.x = fData3; v2.y = fData2; v2.z = 0.0;
+			AddLine(v1, v2, color);
+
+			v1.x = fData3; v1.y = fData2; v1.z = 0.0;
+			v2.x = fData1; v2.y = fData2; v2.z = 0.0;
+			AddLine(v1, v2, color);
 		}
 	}
 	Refresh();
@@ -1364,6 +1499,7 @@ void CSimpleOpengl::DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 {
 	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
 
+	CString sMsg;
 	int nCount = arPcr.GetSize();
 	if (nCount < 1)
 		return;
@@ -1387,13 +1523,17 @@ void CSimpleOpengl::DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 	stVertex v1, v2;
 	double fWidth, fHeight;
 	double fData1, fData2, fData3, fData4;
-	double dPixelSize = 2.5; // [um/pixel]
+	double dPixelSize = CAMMST_PIXEL_RESOLUTION; // [um/pixel]
 	double mmPxl = dPixelSize / 1000.0; // [mm]
 	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
 	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmSpace = 2.0;
 	double dDrawStPosX = 0.0;
+
+	double dDispWidth, dDispHeight;
+	double dPcsScaleY = 1.0;		// for Display Def Num and Serial Num.
+	double dDispPcsScaleStY = 1.0;	// for Display Def Num and Serial Num.
 
 	for (i = 0; i < nCount; i++)
 	{
@@ -1448,9 +1588,14 @@ void CSimpleOpengl::DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 			int nNeedY = fHeight - nWorldH;
 			dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
 			dFrmOffset[1] = 0.0;
+
+			dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)(nWorldH + nNeedY));
 		}
 		else
+		{
 			dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+			dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)nWorldH);
+		}
 
 		if (nDispPcrIdx >= 0)
 		{
@@ -1467,14 +1612,26 @@ void CSimpleOpengl::DrawPnlDef(int nSerial, CArPcr& arPcr, tagStrPcs& StrPcs)
 					int nPcsId = Pcr.GetPcsId(i);
 					int nDefCode = Pcr.GetDefCode(i);
 					double fNeed = 0.0;
-					pParent->GetMatrix(nPcsId, nR, nC);
+					if(!pParent->GetMatrix(nPcsId, nR, nC))
+					{
+						sMsg.Format(_T("Fail to GetMatrix of PcsId(%d)!!!"), nPcsId);
+						AfxMessageBox(sMsg);
+						return;
+					}
+
 					fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
 					fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
 					fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
 					fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
-					fWidth = (fData3 - fData1) * dScaleX;
-					fHeight = (fData4 - fData2) * dScaleY;
+					//fWidth = (fData3 - fData1) * dScaleX;
+					//fHeight = (fData4 - fData2) * dScaleY;
+					fWidth = (fData3 - fData1) * dScaleX * RMAP_PCS_SCALE;
+					fHeight = (fData4 - fData2) * dPcsScaleY * RMAP_PCS_SCALE;
 					fNeed = (fData3 - fData1) - fWidth;
+
+					dDispPcsScaleStY = (fData4 - fData2) * (1.0 - dPcsScaleY * RMAP_PCS_SCALE); // *2.0;
+					fData2 *= dPcsScaleY;
+					fData2 += nWorldH * RMAP_TOTAL_DEF_SCALE - dDispPcsScaleStY;
 
 					fData1 += (double)nWorldStX;
 					fData1 += dFrmSpace * k;
@@ -1521,6 +1678,7 @@ void CSimpleOpengl::DrawCross(stVertex V1, stVertex V2)
 void CSimpleOpengl::DrawMarkedPcs(int nCam, int nSerial, CArPcrMark& arPcrMark, tagStrPcs& StrPcs)
 {
 	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
+	CString sMsg;
 
 	int nCount = arPcrMark.GetSize();
 	if (nCount < 1)
@@ -1543,13 +1701,17 @@ void CSimpleOpengl::DrawMarkedPcs(int nCam, int nSerial, CArPcrMark& arPcrMark, 
 	stVertex v1, v2;
 	double fWidth, fHeight;
 	double fData1, fData2, fData3, fData4;
-	double dPixelSize = 2.5; // [um/pixel]
+	double dPixelSize = CAMMST_PIXEL_RESOLUTION; // [um/pixel]
 	double mmPxl = dPixelSize / 1000.0; // [mm]
 	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
 	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmSpace = 2.0;
 	double dDrawStPosX = 0.0;
+
+	double dDispWidth, dDispHeight;
+	double dPcsScaleY = 1.0;		// for Display Def Num and Serial Num.
+	double dDispPcsScaleStY = 1.0;	// for Display Def Num and Serial Num.
 
 	for (i = 0; i < nCount; i++)
 	{
@@ -1608,9 +1770,14 @@ void CSimpleOpengl::DrawMarkedPcs(int nCam, int nSerial, CArPcrMark& arPcrMark, 
 			int nNeedY = fHeight - nWorldH;
 			dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
 			dFrmOffset[1] = 0.0;
+
+			dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)(nWorldH + nNeedY));
 		}
 		else
+		{
 			dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+			dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)nWorldH);
+		}
 
 		if (nDispPcrIdx >= 0)
 		{
@@ -1628,14 +1795,25 @@ void CSimpleOpengl::DrawMarkedPcs(int nCam, int nSerial, CArPcrMark& arPcrMark, 
 					if (nPcsId < 0) break;
 
 					double fNeed = 0.0;
-					pParent->GetMatrix(nPcsId, nR, nC);
+					if (!pParent->GetMatrix(nPcsId, nR, nC))
+					{
+						sMsg.Format(_T("Fail to GetMatrix of PcsId(%d)!!!"), nPcsId);
+						AfxMessageBox(sMsg);
+						return;
+					}
 					fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
 					fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
 					fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
 					fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
-					fWidth = (fData3 - fData1) * dScaleX;
-					fHeight = (fData4 - fData2) * dScaleY;
+					//fWidth = (fData3 - fData1) * dScaleX;
+					//fHeight = (fData4 - fData2) * dScaleY;
+					fWidth = (fData3 - fData1) * dScaleX * RMAP_PCS_SCALE;
+					fHeight = (fData4 - fData2) * dPcsScaleY * RMAP_PCS_SCALE;
 					fNeed = (fData3 - fData1) - fWidth;
+
+					dDispPcsScaleStY = (fData4 - fData2) * (1.0 - dPcsScaleY * RMAP_PCS_SCALE); // *2.0;
+					fData2 *= dPcsScaleY;
+					fData2 += nWorldH * RMAP_TOTAL_DEF_SCALE - dDispPcsScaleStY;
 
 					fData1 += (double)nWorldStX;
 					fData1 += dFrmSpace * k;
@@ -1665,6 +1843,7 @@ void CSimpleOpengl::DrawMarkedPcs(int nSerial, CArPcrMark& arPcrMark, tagStrPcs&
 {
 	CMyReelmapDlg* pParent = (CMyReelmapDlg*)m_pParent;
 
+	CString sMsg;
 	int nCount = arPcrMark.GetSize();
 	if (nCount < 1)
 		return;
@@ -1686,13 +1865,17 @@ void CSimpleOpengl::DrawMarkedPcs(int nSerial, CArPcrMark& arPcrMark, tagStrPcs&
 	stVertex v1, v2;
 	double fWidth, fHeight;
 	double fData1, fData2, fData3, fData4;
-	double dPixelSize = 2.5; // [um/pixel]
+	double dPixelSize = CAMMST_PIXEL_RESOLUTION; // [um/pixel]
 	double mmPxl = dPixelSize / 1000.0; // [mm]
 	double dScaleX = 1.0, dScaleY = 1.0;// 0.85;
 	double dFrmMargin[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmOffset[4] = { 2.0, 2.0, 2.0, 2.0 }; // [mm] left(0) top(1) right(2) bottom(3)
 	double dFrmSpace = 2.0;
 	double dDrawStPosX = 0.0;
+
+	double dDispWidth, dDispHeight;
+	double dPcsScaleY = 1.0;		// for Display Def Num and Serial Num.
+	double dDispPcsScaleStY = 1.0;	// for Display Def Num and Serial Num.
 
 	for (i = 0; i < nCount; i++)
 	{
@@ -1743,9 +1926,14 @@ void CSimpleOpengl::DrawMarkedPcs(int nSerial, CArPcrMark& arPcrMark, tagStrPcs&
 			int nNeedY = fHeight - nWorldH;
 			dScaleY = (double)((double)nWorldH / (double)(nWorldH + nNeedY));
 			dFrmOffset[1] = 0.0;
+
+			dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)(nWorldH + nNeedY));
 		}
 		else
+		{
 			dFrmOffset[1] = (nWorldH - fHeight) / 2.0;
+			dPcsScaleY = (double)((double)nWorldH * (1.0 - RMAP_TOTAL_DEF_SCALE - RMAP_TOTAL_DEF_SCALE) / (double)nWorldH);
+		}
 
 		if (nDispPcrIdx >= 0)
 		{
@@ -1763,14 +1951,26 @@ void CSimpleOpengl::DrawMarkedPcs(int nSerial, CArPcrMark& arPcrMark, tagStrPcs&
 					if (nPcsId < 0) break;
 					
 					double fNeed = 0.0;
-					pParent->GetMatrix(nPcsId, nR, nC);
+					if(!pParent->GetMatrix(nPcsId, nR, nC))
+					{
+						sMsg.Format(_T("Fail to GetMatrix of PcsId(%d)!!!"), nPcsId);
+						AfxMessageBox(sMsg);
+						return;
+					}
+
 					fData1 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartX * mmPxl;	// left
 					fData2 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iStartY * mmPxl;	// top
 					fData3 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndX * mmPxl;	// right
 					fData4 = (double)StrPcs.m_stPieceRgnPix[nPcsId].iEndY * mmPxl;	// bottom
-					fWidth = (fData3 - fData1) * dScaleX;
-					fHeight = (fData4 - fData2) * dScaleY;
+					//fWidth = (fData3 - fData1) * dScaleX;
+					//fHeight = (fData4 - fData2) * dScaleY;
+					fWidth = (fData3 - fData1) * dScaleX * RMAP_PCS_SCALE;
+					fHeight = (fData4 - fData2) * dPcsScaleY * RMAP_PCS_SCALE;
 					fNeed = (fData3 - fData1) - fWidth;
+
+					dDispPcsScaleStY = (fData4 - fData2) * (1.0 - dPcsScaleY * RMAP_PCS_SCALE); // *2.0;
+					fData2 *= dPcsScaleY;
+					fData2 += nWorldH * RMAP_TOTAL_DEF_SCALE - dDispPcsScaleStY;
 
 					fData1 += (double)nWorldStX;
 					fData1 += dFrmSpace * k;

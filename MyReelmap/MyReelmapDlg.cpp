@@ -160,18 +160,31 @@ void CMyReelmapDlg::InitReelmap()
 	m_pReelmap[0] = new CSimpleReelmap(RMapUp, sPathInfo, sPathRmap, sPathYield, sPathMark, this);
 
 	stRmapInfo stInfo;
+	//stInfo.m_sMcName = _T("BAO14");
+	//stInfo.m_sUserName = _T("¼­ºÀÀ²");
+	//stInfo.m_sModel = _T("L231115S31");
+	//stInfo.m_sLot = _T("200125279");
+	//stInfo.m_sLayer = _T("TOP-3-050");
+	//stInfo.m_sLayerUp = _T("TOP-3-050");
+	//stInfo.m_sLayerDn = _T("BOTTOM-4-050");
+	//stInfo.m_sItsCode = _T("200125279");
+	//stInfo.m_sProcessCode = _T("VS90");
+
 	stInfo.m_sMcName = _T("BAO14");
-	stInfo.m_sUserName = _T("¼­ºÀÀ²");
-	stInfo.m_sModel = _T("L231115S31");
-	stInfo.m_sLot = _T("200125279");
-	stInfo.m_sLayer = _T("TOP-3-050");
-	stInfo.m_sLayerUp = _T("TOP-3-050");
-	stInfo.m_sLayerDn = _T("BOTTOM-4-050");
-	stInfo.m_sItsCode = _T("200125279");
-	stInfo.m_sProcessCode = _T("VS90");
+	stInfo.m_sUserName = _T("°íµµ¿í");
+	stInfo.m_sModel = _T("B1313F2ST1");
+	stInfo.m_sLot = _T("200180747");
+	stInfo.m_sLayer = _T("TOP-0-050");
+	stInfo.m_sLayerUp = _T("TOP-0-050");
+	stInfo.m_sLayerDn = _T("BOTTOM-0-050");
+	stInfo.m_sItsCode = _T("200180747");
+	stInfo.m_sProcessCode = _T("AO9L");
+
 	stInfo.m_nActionCode = 3;
-	stInfo.m_nMaxRow = 20;
-	stInfo.m_nMaxCol = 30;
+	stInfo.m_nMaxRow = 24;
+	stInfo.m_nMaxCol = 22;
+	//stInfo.m_nMaxRow = 20;
+	//stInfo.m_nMaxCol = 30;
 	stInfo.m_nMaxStrip = 4;
 	stInfo.m_nMaxDefCode = 30;
 	m_pReelmap[0]->Init(stInfo);

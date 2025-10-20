@@ -319,6 +319,7 @@ BOOL CSimpleReelmap::ShiftToBuffer(int nSerial)
 
 	if (!CopyPcr(sSrc, sDest))
 		return FALSE;
+	Sleep(10);
 	if (!DelPcr(sSrc))
 		return FALSE;
 
@@ -1212,6 +1213,7 @@ CString CSimpleReelmap::GetTextResult()
 
 CString CSimpleReelmap::GetTextConverse()
 {
+	CString sMsg;
 	int nNodeX = m_stInfo.m_nMaxCol;
 	int nNodeY = m_stInfo.m_nMaxRow;
 	int nStripY = nNodeY / MAX_STRIP;
@@ -1280,7 +1282,13 @@ CString CSimpleReelmap::GetTextConverse()
 		{
 			int nPcsId = Pcr.GetPcsId(k);
 			int nDefCode = Pcr.GetDefCode(k);
-			GetMatrix(nPcsId, nR, nC);
+			if(!GetMatrix(nPcsId, nR, nC))
+			{
+				sMsg.Format(_T("Fail to GetMatrix of PcsId(%d)!!!"), nPcsId);
+				AfxMessageBox(sMsg);
+				return _T("");
+			}
+
 			pPanel[nR][nC] = (short)nDefCode;
 		}
 
@@ -1311,6 +1319,7 @@ CString CSimpleReelmap::GetTextConverse()
 
 CString CSimpleReelmap::GetTextArPcr()
 {
+	CString sMsg;
 	int nNodeX = m_stInfo.m_nMaxCol;
 	int nNodeY = m_stInfo.m_nMaxRow;
 	int nStripY = nNodeY / MAX_STRIP;
@@ -1345,7 +1354,13 @@ CString CSimpleReelmap::GetTextArPcr()
 		{
 			int nPcsId = Pcr.GetPcsId(k);
 			int nDefCode = Pcr.GetDefCode(k);
-			GetMatrix(nPcsId, nR, nC);
+			if(!GetMatrix(nPcsId, nR, nC))
+			{
+				sMsg.Format(_T("Fail to GetMatrix of PcsId(%d)!!!"), nPcsId);
+				AfxMessageBox(sMsg);
+				return _T("");
+			}
+
 			pPanel[nR][nC] = (short)nDefCode;
 		}
 

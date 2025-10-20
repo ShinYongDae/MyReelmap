@@ -72,7 +72,8 @@ void CPcrMark::SetMarkedPcsId(int nMarkedPcsId)
 	if (m_pMarkedPcsId)
 	{
 		m_pMarkedPcsId[m_nTotalMark] = nMarkedPcsId;
-		m_nTotalMark++;
+		if(m_nTotalMark < m_nTotalDef)
+			m_nTotalMark++;
 	}
 }
 

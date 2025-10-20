@@ -48,6 +48,7 @@ BOOL CPcrYield::Load(CPcr& Pcr, CPcrYield* pPrevPcrYield)
 {
 	CSimpleReelmap* pParnet = (CSimpleReelmap*)m_pParent;
 
+	CString sMsg;
 	double dStOutRto = m_dStripOutRatio / 100.0;
 	int nTotPcs = 0, nGood = 0, nBad = 0;
 	int nTotSriptOut = 0;
@@ -78,7 +79,13 @@ BOOL CPcrYield::Load(CPcr& Pcr, CPcrYield* pPrevPcrYield)
 		nDef[nDefCode]++;
 
 		int nPcsId = Pcr.GetPcsId(i);
-		pParnet->GetMatrix(nPcsId, nRow, nCol);
+		if(!pParnet->GetMatrix(nPcsId, nRow, nCol))
+		{
+			sMsg.Format(_T("Fail to GetMatrix of PcsId(%d)!!!"), nPcsId);
+			AfxMessageBox(sMsg);
+			return FALSE;
+		}
+
 		nStrip = int(nRow / (m_nMaxRow / MAX_STRIP));
 		if (nStrip > -1 && nStrip < MAX_STRIP)
 		{

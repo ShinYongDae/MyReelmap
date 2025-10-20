@@ -76,6 +76,12 @@
 #define	RGB_PCS_OUT			RGB_LTGRAY
 
 
+#define RMAP_PCS_SCALE				1.0		// 0.85
+#define RMAP_TOTAL_DEF_SCALE		0.1
+#define RMAP_SERIAL_NUM_SCALE		0.1
+#define CAMMST_PIXEL_RESOLUTION		5.0		//  [um]
+
+
 static GLfloat ambient[] = { 0.1f,0.1f,0.1f,1.0f };			//이것은 자연광 1.0이 제일쎄고 지금은 0.1로했군..
 static GLfloat diffuse[] = { 0.7f,0.7f,0.7f,1.0f };			//이것은 반사광
 static GLfloat specular[] = { 1.0f,1.0f,1.0f,1.0f };		//반짝임효과(재질때문에쓰인다
@@ -152,7 +158,7 @@ struct stColor
 };
 
 #define MAX_LINE	10
-#define LINE_SPACE	2
+#define LINE_SPACE	4
 
 // CSimpleOpengl
 #include "SimpleCamMaster.h"
