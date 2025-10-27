@@ -27,6 +27,8 @@ class CMyReelmapDlg : public CDialog
 	void DrawPnlDef(int nSerial);
 	void DrawMarkedPcs(int nSerial);
 
+	void SetItsOrgCase(int nCase);
+
 // 생성입니다.
 public:
 	CMyReelmapDlg(CWnd* pParent = NULL);	// 표준 생성자입니다.
@@ -64,4 +66,8 @@ public:
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnBnClickedButton4();
 	afx_msg void OnBnClickedButton5();
+	afx_msg void OnBnClickedRadio1();
+	afx_msg void OnBnClickedRadio2();
+	afx_msg void OnBnClickedRadio3();
+	afx_msg void OnBnClickedRadio4();
 };

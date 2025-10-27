@@ -106,11 +106,13 @@ struct stLine
 {
 	stVertex v1, v2;
 	COLORREF color;
+	int nSize;
 	stLine()
 	{
 		v1.x = 0; v1.y = 0; v1.z = 0;
 		v2.x = 0; v2.y = 0; v2.z = 0;
 		color = RGB(255, 255, 255);
+		nSize = 1;
 	}
 };
 typedef CArray<stLine, stLine> CArLine;
@@ -198,6 +200,10 @@ class CSimpleOpengl : public CStatic //public CWnd
 	CArPcr* m_arPcr;
 	tagStrPcs* m_StrPcs;
 
+	stRect m_stRectOrg[4];	// case 0 ~ case 3
+	double m_dDispPcsWidth, m_dDispPcsHeight;
+	int m_nItsOrgCase;
+
 	BOOL CreateWndForm(DWORD dwStyle);
 
 	void ThreadStart();
@@ -247,7 +253,7 @@ public:
 	BOOL IsDraw();
 
 public:
-	void AddLine(stVertex v1, stVertex v2, COLORREF color = RGB(255, 255, 255));
+	void AddLine(stVertex v1, stVertex v2, int nSize, COLORREF color = RGB(255, 255, 255));
 	void AddRect(stVertex v1, stVertex v2, COLORREF color = RGB(255, 255, 255));
 	void AddCross(stVertex v1, stVertex v2, COLORREF color = RGB(0, 0, 0));
 	void AddText(CString str, CPoint pos = {0,0}, COLORREF color = RGB(255, 255, 255)); // DWORD COLORREF 0x00bbggrr
@@ -258,6 +264,13 @@ public:
 	void DrawMarkedPcs(int nSerial, CArPcrMark& arPcrMark, tagStrPcs& StrPcs);				// ¸±¸ÊÀÌ ¼ÂÆÃµÉ ¶§ À§Ä¡ Ç¥½Ã
 	void DrawMarkedPcs(int nCam, int nSerial, CArPcrMark& arPcrMark, tagStrPcs& StrPcs);	// ÆÝÄª Áß¿¡ ÆÝÄª À§Ä¡ Ç¥½Ã
 
+	BOOL IsInRectOrg(stVertex v1, stVertex v2);
+	double GetScaleX(tagStrPcs& StrPcs);
+	double GetScaleY(tagStrPcs& StrPcs);
+	double GetPcsScaleY(tagStrPcs& StrPcs);
+	double GetDispPcsScaleStY(tagStrPcs& StrPcs);
+	int SetItsOrgRgn(int nR, int nC, stVertex v1, stVertex v2, tagStrPcs& StrPcs);
+	void SetItsOrgCase(int nCase);
 
 protected:
 	void ThreadEnd();

@@ -75,6 +75,10 @@ BEGIN_MESSAGE_MAP(CMyReelmapDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON3, &CMyReelmapDlg::OnBnClickedButton3)
 	ON_BN_CLICKED(IDC_BUTTON4, &CMyReelmapDlg::OnBnClickedButton4)
 	ON_BN_CLICKED(IDC_BUTTON5, &CMyReelmapDlg::OnBnClickedButton5)
+	ON_BN_CLICKED(IDC_RADIO1, &CMyReelmapDlg::OnBnClickedRadio1)
+	ON_BN_CLICKED(IDC_RADIO2, &CMyReelmapDlg::OnBnClickedRadio2)
+	ON_BN_CLICKED(IDC_RADIO3, &CMyReelmapDlg::OnBnClickedRadio3)
+	ON_BN_CLICKED(IDC_RADIO4, &CMyReelmapDlg::OnBnClickedRadio4)
 END_MESSAGE_MAP()
 
 
@@ -93,7 +97,9 @@ BOOL CMyReelmapDlg::OnInitDialog()
 	InitReelmap();
 	InitOpengl();
 	InitCamMaster();
-	DrawStrPcs();
+	//DrawStrPcs();
+	((CButton*)GetDlgItem(IDC_RADIO1))->SetCheck(TRUE);
+	SetItsOrgCase(0);
 
 	m_bTimer = TRUE;
 	SetTimer(0, 100, NULL);
@@ -327,4 +333,38 @@ void CMyReelmapDlg::OnBnClickedButton5()
 	m_pReelmap[0]->SetPcsMkOut(1); // 0: Left Cam Or 1: Right Cam , 불량 피스 인덱스 [ 0 ~ (Total Pcs - 1) ]  // (피스인덱스는 CamMaster에서 정한 것을 기준으로 함.)
 	m_pOpengl->DrawMarkedPcs(1, m_nDispPnl[1], GetAddrArPcrMark(), GetAddrStrPcs());
 	m_pOpengl->SetDraw();
+}
+
+void CMyReelmapDlg::SetItsOrgCase(int nCase)
+{
+	m_pOpengl->SetItsOrgCase(nCase);
+	DrawStrPcs();
+	m_pOpengl->SetDraw();
+}
+
+void CMyReelmapDlg::OnBnClickedRadio1()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	SetItsOrgCase(0);
+}
+
+
+void CMyReelmapDlg::OnBnClickedRadio2()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	SetItsOrgCase(1);
+}
+
+
+void CMyReelmapDlg::OnBnClickedRadio3()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	SetItsOrgCase(2);
+}
+
+
+void CMyReelmapDlg::OnBnClickedRadio4()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	SetItsOrgCase(3);
 }
